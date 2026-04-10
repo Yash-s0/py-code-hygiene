@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ report.meta.tool }} report</title>
+<style>
+:root {
+  --bg: radial-gradient(circle at 10% 10%, #eef6ff 0%, #f7fbff 35%, #fefefe 100%);
+  --surface: #ffffff;
+  --surface-muted: #f5f8fc;
+  --text: #132238;
+  --text-muted: #4a5c72;
+  --accent: #0f766e;
+  --accent-soft: rgba(15, 118, 110, 0.14);
+  --danger: #c0392b;
+  --warn: #d68910;
+  --ok: #2e8b57;
+  --border: #dce6f1;
+  --shadow: 0 10px 30px rgba(11, 28, 48, 0.08);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 26px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "IBM Plex Sans", "Trebuchet MS", "Segoe UI", sans-serif;
+}
+.container {
+  max-width: 1220px;
+  margin: 0 auto;
+}
+.header {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+.title {
+  margin: 0;
+  font-size: clamp(26px, 4vw, 34px);
+  letter-spacing: 0.2px;
+}
+.subtitle {
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+.health {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+.health-bar {
+  width: 220px;
+  height: 10px;
+  border-radius: 99px;
+  background: #dde7f1;
+  overflow: hidden;
+}
+.health-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ce2f2f 0%, #eba028 45%, #2f9e44 100%);
+}
+.summary-grid {
+  margin-top: 20px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.stat-card {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.stat-label { color: var(--text-muted); font-size: 12px; }
+.stat-value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+.controls {
+  margin-top: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.controls input,
+.controls select,
+.controls button {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  background: #fff;
+}
+.controls input {
+  min-width: 240px;
+  flex: 1;
+}
+.controls button {
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  border-color: transparent;
+}
+.controls button.secondary {
+  background: #1f4e79;
+}
+.tab-nav {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tab-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 9px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.tab-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: #0b5d57;
+  font-weight: 700;
+}
+.panel {
+  display: none;
+  margin-top: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+.panel.active {
+  display: block;
+}
+h2 {
+  margin-top: 0;
+  font-size: 22px;
+}
+h3 {
+  margin-bottom: 10px;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  padding: 9px 8px;
+  vertical-align: top;
+}
+th {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.small { font-size: 12px; color: var(--text-muted); }
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  font-size: 11px;
+  padding: 2px 8px;
+  background: #ebf1f8;
+}
+.badge.high { background: #e7f6ec; color: #17633b; }
+.badge.medium { background: #fff3d7; color: #9c6a00; }
+.badge.low { background: #fde8e6; color: #8f2d21; }
+.badge.dead_code { background: #e8f2ff; color: #204d83; }
+.badge.duplicates { background: #f0e9ff; color: #5f3aa2; }
+.badge.complexity { background: #ffeede; color: #a04f00; }
+.group {
+  border: 1px solid var(--border);
+  border-left: 5px solid #9467bd;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #fcfaff;
+}
+.group.exact { border-left-color: #2980b9; background: #f6fbff; }
+.group.near { border-left-color: #9b59b6; background: #fcf8ff; }
+.group pre {
+  margin: 8px 0 0;
+  padding: 10px;
+  background: #111827;
+  color: #e7eef8;
+  border-radius: 8px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  font-family: "IBM Plex Mono", "Consolas", monospace;
+  font-size: 12px;
+}
+.error-list {
+  margin: 0;
+  padding-left: 18px;
+}
+.raw {
+  max-height: 70vh;
+  overflow: auto;
+  background: #0f172a;
+  color: #dbeafe;
+  padding: 14px;
+  border-radius: 10px;
+  font-family: "IBM Plex Mono", "Consolas", monospace;
+  font-size: 12px;
+}
+.hidden-by-filter {
+  display: none !important;
+}
+@media (max-width: 780px) {
+  body { padding: 12px; }
+  .controls input { min-width: 100%; }
+  .health-bar { width: 170px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <section class="header">
+    <h1 class="title">Py Code Hygiene Report</h1>
+    <div class="subtitle">
+      <strong>Target:</strong> {{ report.meta.target }}<br>
+      <strong>Generated:</strong> {{ report.meta.generated_at }}<br>
+      <strong>Python:</strong> {{ report.meta.python }}
+    </div>
+    <div class="health">
+      Health {{ report.summary.health_score }}%
+      <div class="health-bar"><div class="health-fill" style="width: {{ report.summary.health_score }}%"></div></div>
+    </div>
+    <div class="summary-grid">
+      <div class="stat-card"><div class="stat-label">Files Analyzed</div><div class="stat-value">{{ report.summary.files_analyzed }}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Findings</div><div class="stat-value">{{ report.summary.total_findings }}</div></div>
+      <div class="stat-card"><div class="stat-label">Dead Code</div><div class="stat-value">{{ report.summary.by_analyzer.dead_code }}</div></div>
+      <div class="stat-card"><div class="stat-label">Duplicate Groups</div><div class="stat-value">{{ report.summary.by_analyzer.duplicates }}</div></div>
+      <div class="stat-card"><div class="stat-label">Complexity Hotspots</div><div class="stat-value">{{ report.summary.by_analyzer.complexity }}</div></div>
+      <div class="stat-card"><div class="stat-label">Parse Errors</div><div class="stat-value">{{ report.summary.parse_errors }}</div></div>
+    </div>
+  </section>
+
+  <section class="controls">
+    <input id="searchInput" type="text" placeholder="Search file/symbol/message/evidence">
+    <select id="analyzerFilter">
+      <option value="all">All analyzers</option>
+      <option value="dead_code">Dead code</option>
+      <option value="duplicates">Duplicates</option>
+      <option value="complexity">Complexity</option>
+    </select>
+    <select id="confidenceFilter">
+      <option value="all">All confidence</option>
+      <option value="high">High</option>
+      <option value="medium">Medium</option>
+      <option value="low">Low</option>
+    </select>
+    <button id="clearFilters" type="button">Clear Filters</button>
+    <button id="downloadJson" class="secondary" type="button">Download JSON</button>
+    <span class="small" id="filterCount">Showing all entries</span>
+  </section>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="overview">Overview</button>
+    <button class="tab-btn" data-tab="deadcode">Dead Code</button>
+    <button class="tab-btn" data-tab="duplicates">Duplicates</button>
+    <button class="tab-btn" data-tab="complexity">Complexity</button>
+    <button class="tab-btn" data-tab="raw">Raw JSON</button>
+  </nav>
+
+  <section class="panel active" data-panel="overview">
+    <h2>Overview</h2>
+    <h3>Top Files By Code Lines</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>File</th><th>Code</th><th>Comments</th><th>Functions</th><th>Classes</th></tr>
+        </thead>
+        <tbody>
+          {% for file in report.files[:20] %}
+          <tr>
+            <td>{{ file.file }}</td>
+            <td>{{ file.code_lines }}</td>
+            <td>{{ file.comment_lines }}</td>
+            <td>{{ file.function_count }}</td>
+            <td>{{ file.class_count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:16px;">Parse Errors</h3>
+    {% if report.parse_errors %}
+      <ul class="error-list">
+      {% for file, message in report.parse_errors.items() %}
+        <li><strong>{{ file }}</strong>: {{ message }}</li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <div class="small">No syntax/parse errors detected in analyzed files.</div>
+    {% endif %}
+  </section>
+
+  <section class="panel" data-panel="deadcode">
+    <h2>Dead Code Findings</h2>
+    <div class="small">Total active dead-code findings: {{ report.dead_code.summary.total }} | Suppressed: {{ report.dead_code.summary.suppressed }}</div>
+    <div class="table-wrap" style="margin-top:12px;">
+      <table>
+        <thead>
+          <tr><th>Confidence</th><th>Category</th><th>Location</th><th>Symbol</th><th>Message</th></tr>
+        </thead>
+        <tbody>
+          {% for finding in report.dead_code.findings %}
+          <tr class="filterable" data-analyzer="dead_code" data-confidence="{{ finding.confidence }}" data-text="{{ finding.file }} {{ finding.symbol }} {{ finding.category }} {{ finding.message }} {{ finding.evidence|join(' ') }}">
+            <td><span class="badge {{ finding.confidence }}">{{ finding.confidence }}</span></td>
+            <td>{{ finding.category }}</td>
+            <td>{{ finding.file }}:{{ finding.line_start }}</td>
+            <td>{{ finding.symbol or '-' }}</td>
+            <td>
+              <div>{{ finding.message }}</div>
+              {% if finding.evidence %}<div class="small">{{ finding.evidence|join('; ') }}</div>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="duplicates">
+    <h2>Duplicate Groups</h2>
+    <div class="small">Exact groups: {{ report.duplicates.summary.exact_groups }} | Near groups: {{ report.duplicates.summary.near_groups }}</div>
+    <div style="margin-top:12px;">
+      {% for group in report.duplicates.groups %}
+      <article class="group {{ group.kind }} filterable" data-analyzer="duplicates" data-confidence="{{ group.confidence }}" data-text="{{ group.reason }} {{ group.kind }} {{ group.items|map(attribute='file')|join(' ') }} {{ group.items|map(attribute='name')|join(' ') }}">
+        <div>
+          <span class="badge duplicates">{{ group.kind }}</span>
+          <span class="badge {{ group.confidence }}">{{ group.confidence }}</span>
+          <strong style="margin-left:8px;">{{ group.count }} items</strong>
+          <span class="small" style="margin-left:8px;">Similarity {{ group.similarity }}</span>
+        </div>
+        <div class="small" style="margin-top:6px;">{{ group.reason }}</div>
+        {% for item in group.items %}
+        <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
+          <strong>{{ item.file }}:{{ item.line_start }}</strong> - {{ item.qualname }}
+          <pre>{{ item.snippet }}</pre>
+        </div>
+        {% endfor %}
+      </article>
+      {% else %}
+      <div class="small">No duplicate groups detected with the current thresholds.</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel" data-panel="complexity">
+    <h2>Complexity Hotspots</h2>
+    <div class="small">Threshold: {{ report.complexity.summary.threshold }} | Hotspots: {{ report.complexity.summary.hotspots }}</div>
+
+    <div class="table-wrap" style="margin-top:12px;">
+      <table>
+        <thead>
+          <tr><th>Confidence</th><th>Complexity</th><th>Function</th><th>Location</th><th>Guidance</th></tr>
+        </thead>
+        <tbody>
+          {% for hotspot in report.complexity.hotspots %}
+          <tr class="filterable" data-analyzer="complexity" data-confidence="{{ hotspot.confidence }}" data-text="{{ hotspot.file }} {{ hotspot.symbol }} {{ hotspot.message }} {{ hotspot.evidence|join(' ') }}">
+            <td><span class="badge {{ hotspot.confidence }}">{{ hotspot.confidence }}</span></td>
+            <td>{{ hotspot.complexity }}</td>
+            <td>{{ hotspot.qualname }}</td>
+            <td>{{ hotspot.file }}:{{ hotspot.line_start }}</td>
+            <td>{{ hotspot.suggested_action }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:18px;">Top Functions</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Complexity</th><th>Function</th><th>File</th><th>Lines</th></tr></thead>
+        <tbody>
+          {% for row in report.complexity.top_functions %}
+          <tr>
+            <td>{{ row.complexity }}</td>
+            <td>{{ row.qualname }}</td>
+            <td>{{ row.file }}:{{ row.line_start }}</td>
+            <td>{{ row.lines }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="raw">
+    <h2>Raw JSON</h2>
+    <pre class="raw" id="rawJson">{{ report_json }}</pre>
+  </section>
+</div>
+
+<script>
+const tabs = document.querySelectorAll('.tab-btn');
+const panels = document.querySelectorAll('.panel');
+for (const tab of tabs) {
+  tab.addEventListener('click', () => {
+    tabs.forEach(btn => btn.classList.remove('active'));
+    panels.forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelector(`.panel[data-panel="${tab.dataset.tab}"]`).classList.add('active');
+  });
+}
+
+const searchInput = document.getElementById('searchInput');
+const analyzerFilter = document.getElementById('analyzerFilter');
+const confidenceFilter = document.getElementById('confidenceFilter');
+const clearFilters = document.getElementById('clearFilters');
+const filterCount = document.getElementById('filterCount');
+const filterables = Array.from(document.querySelectorAll('.filterable'));
+
+function applyFilters() {
+  const q = searchInput.value.trim().toLowerCase();
+  const analyzer = analyzerFilter.value;
+  const confidence = confidenceFilter.value;
+
+  let visible = 0;
+  for (const el of filterables) {
+    const text = (el.dataset.text || '').toLowerCase();
+    const a = el.dataset.analyzer || '';
+    const c = el.dataset.confidence || '';
+
+    const qMatch = !q || text.includes(q);
+    const aMatch = analyzer === 'all' || analyzer === a;
+    const cMatch = confidence === 'all' || confidence === c;
+
+    if (qMatch && aMatch && cMatch) {
+      el.classList.remove('hidden-by-filter');
+      visible += 1;
+    } else {
+      el.classList.add('hidden-by-filter');
+    }
+  }
+
+  if (!q && analyzer === 'all' && confidence === 'all') {
+    filterCount.textContent = 'Showing all entries';
+  } else {
+    filterCount.textContent = `Showing ${visible} matching entries`;
+  }
+}
+
+for (const node of [searchInput, analyzerFilter, confidenceFilter]) {
+  node.addEventListener('input', applyFilters);
+  node.addEventListener('change', applyFilters);
+}
+
+clearFilters.addEventListener('click', () => {
+  searchInput.value = '';
+  analyzerFilter.value = 'all';
+  confidenceFilter.value = 'all';
+  applyFilters();
+});
+
+const downloadJson = document.getElementById('downloadJson');
+downloadJson.addEventListener('click', () => {
+  const data = document.getElementById('rawJson').textContent;
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'pycodehygiene-report.json';
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+applyFilters();
+</script>
+</body>
+</html>
