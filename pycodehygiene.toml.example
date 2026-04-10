@@ -1,0 +1,24 @@
+[tool.pycodehygiene]
+minimum_confidence_to_report = "medium"
+treat_public_api_as_live = true
+ignore_magic_methods = true
+ignore_test_files = true
+
+include = ["src/**/*.py"]
+exclude = ["build/**", "dist/**"]
+exclude_dirs = [".venv", "node_modules"]
+
+framework_presets = ["fastapi", "flask", "pytest", "pydantic"]
+known_decorators = ["register", "app.route"]
+known_base_classes = ["BaseModel"]
+
+duplicate_min_lines = 6
+duplicate_similarity_threshold = 0.84
+duplicate_shingle_size = 5
+duplicate_minhash_permutations = 48
+duplicate_lsh_bands = 12
+
+complexity_threshold = 10
+top_complexity_limit = 30
+
+report_title = "Py Code Hygiene Report"
