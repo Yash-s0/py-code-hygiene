@@ -30,6 +30,7 @@ def build_parser() -> argparse.ArgumentParser:
     scan_parser.add_argument("--dup-threshold", type=float, default=None, help="Near-duplicate similarity threshold (0.5-1.0)")
     scan_parser.add_argument("--complexity-threshold", type=int, default=None, help="Complexity hotspot threshold")
     scan_parser.add_argument("--no-html", action="store_true", help="Skip HTML report generation")
+    scan_parser.add_argument("--no-json", action="store_true", help="Skip JSON report generation")
 
     benchmark_parser = subparsers.add_parser(
         "benchmark",
@@ -100,11 +101,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         complexity_threshold=args.complexity_threshold,
     )
 
-    json_path = _resolve_scan_output_path(target, args.json_output, ".json")
-    json_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    json_path: Optional[Path] = None
+    if not args.no_json:
+        json_path = _resolve_scan_output_path(target, args.json_output, ".json")
+        json_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
-    html_path = _resolve_scan_output_path(target, args.html_output, ".html")
+    html_path: Optional[Path] = None
     if not args.no_html:
+        html_path = _resolve_scan_output_path(target, args.html_output, ".html")
         ReportGenerator().generate(html_path, report)
 
     summary = report.get("summary", {})
@@ -119,9 +123,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             comp=analyzer_counts.get("complexity", 0),
         )
     )
-    print(f"[+] JSON report: {json_path}")
-    if not args.no_html:
+    if json_path is not None:
+        print(f"[+] JSON report: {json_path}")
+    if html_path is not None:
         print(f"[+] HTML report: {html_path}")
+    if json_path is None and html_path is None:
+        print("[+] Output reports skipped (--no-json and --no-html)")
 
     return 0
 

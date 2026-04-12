@@ -5,7 +5,7 @@ Unified Python code hygiene scanner for:
 - duplicates
 - complexity hotspots
 
-It produces one developer-friendly HTML report and one JSON report per scan.
+By default it produces one developer-friendly HTML report and one JSON report per scan.
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![Jinja2](https://img.shields.io/badge/Jinja2-Template%20Engine-B41717?logo=jinja&logoColor=white)
@@ -97,7 +97,8 @@ Explanation of each line:
 | `--min-dup-lines` | Override duplicate minimum lines |
 | `--dup-threshold` | Override duplicate similarity threshold |
 | `--complexity-threshold` | Override complexity threshold |
-| `--no-html` | Skip HTML generation (JSON still generated) |
+| `--no-html` | Skip HTML generation |
+| `--no-json` | Skip JSON generation |
 
 ## Benchmark Command (Line-by-Line)
 ```bash
@@ -156,13 +157,17 @@ Explanation of each line:
   - `<target-folder>_report.html`
   - `<target-folder>_report.json`
 - if extension is omitted, it is added automatically
-- scan always writes JSON, even if `--no-html` is used
+- use `--no-html` and/or `--no-json` to control which report files are generated
 
 Examples:
 - `py-code-hygiene scan /path/to/project --html-output my.html --json-output my.json`
   creates `reports/my.html` and `reports/my.json`.
 - `py-code-hygiene scan /path/to/project --no-html`
   creates only `reports/<target>_report.json`.
+- `py-code-hygiene scan /path/to/project --no-json`
+  creates only `reports/<target>_report.html`.
+- `py-code-hygiene scan /path/to/project --no-html --no-json`
+  creates no report files (terminal summary only).
 
 ## Common Recipes
 Scan current folder:
@@ -173,6 +178,11 @@ py-code-hygiene scan .
 Scan with JSON only:
 ```bash
 py-code-hygiene scan /path/to/project --no-html
+```
+
+Scan with HTML only:
+```bash
+py-code-hygiene scan /path/to/project --no-json
 ```
 
 Benchmark with defaults:
