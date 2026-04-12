@@ -1,17 +1,29 @@
 # py-code-hygiene
 
-Unified Python code hygiene scanner that combines:
-- dead code analysis (unused imports/symbols/locals + unreachable code)
-- duplicate detection (exact normalized clones + near duplicates via MinHash/LSH + Jaccard verification)
-- complexity hotspots (cyclomatic complexity thresholding)
+Unified Python code hygiene scanner for:
+- dead code
+- duplicates
+- complexity hotspots
 
-It generates a single JSON and HTML report for review-first cleanup workflows.
+It produces one developer-friendly HTML report and one JSON report per scan.
+
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![Jinja2](https://img.shields.io/badge/Jinja2-Template%20Engine-B41717?logo=jinja&logoColor=white)
+![TOML](https://img.shields.io/badge/Config-TOML-9C4121?logo=toml&logoColor=white)
+![HTML](https://img.shields.io/badge/Report-HTML-E34F26?logo=html5&logoColor=white)
+![JSON](https://img.shields.io/badge/Report-JSON-000000?logo=json&logoColor=white)
+![CLI](https://img.shields.io/badge/Interface-CLI-2d2d2d?logo=gnubash&logoColor=white)
+
+## Why developers use it
+- catches likely removable code with confidence scoring
+- finds exact and near duplicates
+- highlights complex functions to refactor first
+- keeps outputs centralized in this repo's `reports/` folder
 
 ## Requirements
 - Python 3.11+
 
 ## Install
-
 ```bash
 cd py-code-hygiene
 python -m venv .venv
@@ -19,33 +31,28 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-## Commands (Current CLI)
+## Quick Start
+```bash
+py-code-hygiene scan /path/to/project
+```
 
+What happens:
+- analyzes the target project
+- writes reports in `reports/`
+- prints summary stats in terminal
+
+## Command Help
 ```bash
 py-code-hygiene --help
 py-code-hygiene scan --help
 py-code-hygiene benchmark --help
 ```
 
-Available subcommands:
-- `scan`: run analyzers and generate reports
+Subcommands:
+- `scan`: run analysis and generate reports
 - `benchmark`: measure analyzer/full-scan performance
 
-## Usage
-
-### 1) Basic scan (quick start)
-
-```bash
-py-code-hygiene scan /path/to/project
-```
-
-What this does:
-- scans the target path
-- writes JSON + HTML reports
-- prints summary counts in terminal
-
-### 2) Full scan command with line-by-line explanation
-
+## Scan Command (Line-by-Line)
 ```bash
 py-code-hygiene scan /path/to/project \
   --html-output project_report.html \
@@ -58,70 +65,41 @@ py-code-hygiene scan /path/to/project \
   --complexity-threshold 12
 ```
 
-Line-by-line:
+Explanation of each line:
 1. `py-code-hygiene scan /path/to/project`
-   scans this project folder (if omitted, default is current directory `.`).
+   runs scan on this folder (defaults to `.` if path is not provided).
 2. `--html-output project_report.html`
-   sets HTML output filename (`-o` is an alias for this option).
+   sets HTML report filename (`-o` is a shortcut).
 3. `--json-output project_report.json`
-   sets JSON output filename.
+   sets JSON report filename.
 4. `--config /path/to/pycodehygiene.toml`
-   loads config from an explicit TOML file.
+   uses explicit config file.
 5. `--include "app/**/*.py"`
-   include filter (repeatable). Use multiple `--include` lines if needed.
+   include glob filter (repeatable).
 6. `--exclude "tests/**"`
-   exclude filter (repeatable). Use multiple `--exclude` lines if needed.
+   exclude glob filter (repeatable).
 7. `--min-dup-lines 8`
-   minimum block length used for duplicate detection.
+   minimum duplicate block size.
 8. `--dup-threshold 0.88`
-   near-duplicate similarity threshold (valid range: `0.5` to `1.0`).
+   near-duplicate similarity threshold (`0.5` to `1.0`).
 9. `--complexity-threshold 12`
-   complexity score cutoff for reporting hotspots.
+   complexity hotspot threshold.
 
-### 3) Scan options (all)
+### Scan Options
+| Option | Meaning |
+|---|---|
+| `path` | Project path to scan (default: current directory) |
+| `--html-output`, `-o` | HTML output filename |
+| `--json-output` | JSON output filename |
+| `--config` | Path to `pycodehygiene.toml` |
+| `--include` | Include glob pattern (repeatable) |
+| `--exclude` | Exclude glob pattern (repeatable) |
+| `--min-dup-lines` | Override duplicate minimum lines |
+| `--dup-threshold` | Override duplicate similarity threshold |
+| `--complexity-threshold` | Override complexity threshold |
+| `--no-html` | Skip HTML generation (JSON still generated) |
 
-- `path`
-  target project path (default: current directory).
-- `--html-output`, `-o`
-  output HTML report filename.
-- `--json-output`
-  output JSON report filename.
-- `--config`
-  config file path.
-- `--include` (repeatable)
-  include glob(s), for example `--include "src/**/*.py"`.
-- `--exclude` (repeatable)
-  exclude glob(s), for example `--exclude "migrations/**"`.
-- `--min-dup-lines`
-  override duplicate minimum lines.
-- `--dup-threshold`
-  override near-duplicate threshold.
-- `--complexity-threshold`
-  override complexity threshold.
-- `--no-html`
-  skip HTML generation (JSON still generated).
-
-### 4) Scan output behavior (important)
-
-- All scan outputs are written under this repo's `reports/` directory.
-- Output path values are normalized to filename only (directory parts are ignored).
-- Default names are target-based:
-  - `<target-folder>_report.html`
-  - `<target-folder>_report.json`
-- If output filename has no extension, the proper one is added.
-- JSON is always generated for `scan`.
-
-Examples:
-- `py-code-hygiene scan /path/to/project --html-output my.html --json-output my.json`
-  writes:
-  - `reports/my.html`
-  - `reports/my.json`
-- `py-code-hygiene scan /path/to/project --no-html`
-  writes:
-  - `reports/<target>_report.json`
-
-### 5) Benchmark command with line-by-line explanation
-
+## Benchmark Command (Line-by-Line)
 ```bash
 py-code-hygiene benchmark /path/to/project \
   --runs 8 \
@@ -135,59 +113,64 @@ py-code-hygiene benchmark /path/to/project \
   --json-output benchmark_results.json
 ```
 
-Line-by-line:
+Explanation of each line:
 1. `py-code-hygiene benchmark /path/to/project`
-   runs performance benchmark on this target.
+   runs benchmark for analyzers + full scan.
 2. `--runs 8`
-   number of measured runs after warmup.
+   measured runs after warmup.
 3. `--warmups 2`
-   warmup runs before measured runs.
+   warmup runs before measurements.
 4. `--config /path/to/pycodehygiene.toml`
-   config path for benchmarked scan settings.
+   benchmark with specific config.
 5. `--include "app/**/*.py"`
-   include filter (repeatable).
+   include glob filter (repeatable).
 6. `--exclude "tests/**"`
-   exclude filter (repeatable).
+   exclude glob filter (repeatable).
 7. `--min-dup-lines 8`
-   duplicate analyzer override for benchmark.
+   duplicate analyzer override.
 8. `--dup-threshold 0.88`
-   duplicate similarity override for benchmark.
+   similarity override.
 9. `--complexity-threshold 12`
-   complexity override for benchmark.
+   complexity override.
 10. `--json-output benchmark_results.json`
-    writes benchmark JSON artifact into `reports/`.
+    write benchmark JSON artifact to `reports/`.
 
-### 6) Benchmark options (all)
+### Benchmark Options
+| Option | Meaning |
+|---|---|
+| `path` | Project path to benchmark (default: current directory) |
+| `--config` | Path to `pycodehygiene.toml` |
+| `--include` | Include glob pattern (repeatable) |
+| `--exclude` | Exclude glob pattern (repeatable) |
+| `--min-dup-lines` | Duplicate minimum lines override |
+| `--dup-threshold` | Duplicate similarity threshold override |
+| `--complexity-threshold` | Complexity threshold override |
+| `--runs` | Measured runs (default: `5`) |
+| `--warmups` | Warmup runs (default: `1`) |
+| `--json-output` | Benchmark JSON filename (saved in `reports/`) |
 
-- `path`
-  target project path (default: current directory).
-- `--config`
-  config file path.
-- `--include` (repeatable)
-  include glob filters.
-- `--exclude` (repeatable)
-  exclude glob filters.
-- `--min-dup-lines`
-  duplicate min lines override.
-- `--dup-threshold`
-  duplicate similarity threshold override.
-- `--complexity-threshold`
-  complexity threshold override.
-- `--runs`
-  measured benchmark runs (default: `5`).
-- `--warmups`
-  warmup runs before measurements (default: `1`).
-- `--json-output`
-  optional benchmark JSON filename (saved in `reports/`).
+## Report Output Rules
+- scan outputs are always written under this repo's `reports/` directory
+- only the filename part of output paths is used
+- default scan filenames are:
+  - `<target-folder>_report.html`
+  - `<target-folder>_report.json`
+- if extension is omitted, it is added automatically
+- scan always writes JSON, even if `--no-html` is used
 
-### 7) Useful command recipes
+Examples:
+- `py-code-hygiene scan /path/to/project --html-output my.html --json-output my.json`
+  creates `reports/my.html` and `reports/my.json`.
+- `py-code-hygiene scan /path/to/project --no-html`
+  creates only `reports/<target>_report.json`.
 
-Scan current directory:
+## Common Recipes
+Scan current folder:
 ```bash
 py-code-hygiene scan .
 ```
 
-Scan with only JSON output:
+Scan with JSON only:
 ```bash
 py-code-hygiene scan /path/to/project --no-html
 ```
@@ -197,15 +180,13 @@ Benchmark with defaults:
 py-code-hygiene benchmark /path/to/project
 ```
 
-Config file support:
-- default: `pycodehygiene.toml` in the scan root
+## Config
+Config file locations:
+- auto-detected: `pycodehygiene.toml` in scan root
 - explicit: `--config /path/to/pycodehygiene.toml`
-- schema example: `pycodehygiene.toml.example`
+- reference schema: `pycodehygiene.toml.example`
 
-## Config schema
-
-Top-level tool table:
-
+Example config:
 ```toml
 [tool.pycodehygiene]
 minimum_confidence_to_report = "medium"
@@ -231,20 +212,16 @@ complexity_threshold = 10
 top_complexity_limit = 30
 ```
 
-## Output
-
-The unified report includes:
+## What the Report Includes
 - overview metrics and parse errors
-- dead-code findings with confidence and evidence
-- duplicate groups with snippets and similarity
-- complexity hotspots and top-complexity functions
-- sticky filter bar for quick review in long reports
-- global HTML filtering by analyzer/confidence/severity/search text
-- sortable tables for overview, dead-code, and complexity sections
+- dead-code findings with confidence + evidence
+- duplicate groups with snippets + similarity
+- complexity hotspots + top functions
+- HTML filtering, sorting, and issue preview interactions
 
 ## Notes
-- Review-only by design (no in-report code mutation/autofix in v1).
-- Static analysis is conservative but may still miss runtime dynamic behavior.
+- Review-only by design (no autofix mutation in report).
+- Static analysis is conservative and may miss runtime-only behavior.
 
 ## License
 MIT
