@@ -11,6 +11,7 @@ from pycodehygiene.utils import count_lines, read_file
 
 
 ENTRYPOINT_NAMES = {"main", "cli", "run"}
+SIDE_EFFECT_MODULE_HINTS = {"registry", "registries", "signal", "signals", "plugin", "plugins", "hook", "hooks"}
 
 
 DECISION_NODES = (
@@ -75,6 +76,7 @@ def build_index(discovery: DiscoveryResult, config: Config) -> RepoIndex:
 
     _apply_exports(index)
     _resolve_import_targets(index)
+    _mark_import_bindings_reused_by_other_modules(index)
     _mark_reexports_in_init(index)
     _mark_public_api(index, config)
     return index
@@ -132,6 +134,7 @@ class IndexCollector(ast.NodeVisitor):
                 imported_name=None,
                 has_alias=bool(alias.asname),
                 is_star=False,
+                is_top_level=not self.container_stack,
                 in_type_checking=self._in_type_checking(),
             )
             self._register_import(binding)
@@ -169,8 +172,11 @@ class IndexCollector(ast.NodeVisitor):
                 imported_name=None if is_star else alias.name,
                 has_alias=bool(alias.asname),
                 is_star=is_star,
+                is_top_level=not self.container_stack,
                 in_type_checking=self._in_type_checking(),
             )
+            if node.module == "__future__":
+                binding.reasons.add("future_import")
             self._register_import(binding)
 
         if node.module == "__future__":
@@ -434,6 +440,9 @@ def _apply_exports(index: RepoIndex) -> None:
 
 def _resolve_import_targets(index: RepoIndex) -> None:
     for binding in index.imports.values():
+        if _module_name_has_side_effect_hint(binding.imported_module):
+            binding.reasons.add("side_effect_module_hint")
+
         if binding.is_star:
             binding.reasons.add("star_import")
             continue
@@ -447,6 +456,31 @@ def _resolve_import_targets(index: RepoIndex) -> None:
 
         if binding.imported_name is None and not binding.has_alias:
             binding.reasons.add("side_effect_import")
+
+
+def _mark_import_bindings_reused_by_other_modules(index: RepoIndex) -> None:
+    direct_consumers: Dict[tuple, Set[str]] = {}
+    star_consumers: Dict[str, Set[str]] = {}
+
+    for binding in index.imports.values():
+        if binding.imported_name:
+            key = (binding.imported_module, binding.imported_name)
+            direct_consumers.setdefault(key, set()).add(binding.module)
+        elif binding.is_star:
+            star_consumers.setdefault(binding.imported_module, set()).add(binding.module)
+
+    for binding in index.imports.values():
+        if not binding.is_top_level:
+            continue
+
+        consumer_modules = direct_consumers.get((binding.module, binding.bound_name), set())
+        if any(consumer != binding.module for consumer in consumer_modules):
+            binding.reasons.add("imported_by_other_module")
+
+        star_modules = star_consumers.get(binding.module, set())
+        if binding.bound_name and not binding.bound_name.startswith("_"):
+            if any(consumer != binding.module for consumer in star_modules):
+                binding.reasons.add("imported_by_star")
 
 
 def _mark_reexports_in_init(index: RepoIndex) -> None:
@@ -488,6 +522,13 @@ def resolve_import_from_module(package: str, level: int, module: Optional[str]) 
         package_parts.extend(module.split("."))
 
     return ".".join(part for part in package_parts if part)
+
+
+def _module_name_has_side_effect_hint(module_name: str) -> bool:
+    if not module_name:
+        return False
+    parts = module_name.split(".")
+    return any(part in SIDE_EFFECT_MODULE_HINTS for part in parts)
 
 
 def decorator_name(node: ast.AST) -> str:

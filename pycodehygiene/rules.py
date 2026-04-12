@@ -41,6 +41,9 @@ class UnusedImportsRule(BaseRule):
         findings: List[Finding] = []
 
         for binding in ctx.index.imports.values():
+            if "future_import" in binding.reasons:
+                continue
+
             if binding.symbol_id in ctx.usage.used_imports:
                 continue
 
@@ -65,6 +68,12 @@ class UnusedImportsRule(BaseRule):
                 evidence.append("Import re-exported by package __init__")
             if "side_effect_import" in reasons:
                 evidence.append("Import may be for side effects")
+            if "side_effect_module_hint" in reasons:
+                evidence.append("Imported module name suggests registry/plugin side effects")
+            if "imported_by_other_module" in reasons:
+                evidence.append("Imported by another module in this repository")
+            if "imported_by_star" in reasons:
+                evidence.append("Module is imported via star import in another module")
             if "star_import" in reasons:
                 evidence.append("Star import prevents reliable usage tracing")
 

@@ -62,6 +62,7 @@ class ImportBinding:
     imported_name: Optional[str]
     has_alias: bool
     is_star: bool = False
+    is_top_level: bool = True
     in_type_checking: bool = False
     reasons: Set[str] = field(default_factory=set)
     target_symbol_ids: Set[str] = field(default_factory=set)

@@ -103,6 +103,18 @@ class ModuleReferenceCollector(ast.NodeVisitor):
         if isinstance(node.ctx, ast.Load):
             self._mark_name_used(node.id)
 
+    def visit_Constant(self, node: ast.Constant):
+        # Parse deferred/quoted annotations so names in string annotations
+        # contribute to usage and don't get misreported as dead code.
+        if (
+            self.annotation_stack
+            and self.annotation_stack[-1]
+            and isinstance(node.value, str)
+        ):
+            parsed = _parse_annotation_expr(node.value)
+            if parsed is not None:
+                self.visit(parsed)
+
     def visit_Global(self, node: ast.Global):
         self.scope_stack[-1].global_names.update(node.names)
 
@@ -369,6 +381,10 @@ class ModuleReferenceCollector(ast.NodeVisitor):
         scope = self._resolve_usage_scope(name)
         if scope:
             scope.used.add(name)
+            # A function-local/nonlocal binding shadows module symbols/imports.
+            # Avoid counting those local reads as top-level symbol/import usage.
+            if scope.kind != "module":
+                return
 
         self._mark_import_binding_used(name)
         self._mark_named_symbols_used(name)
@@ -617,3 +633,11 @@ def is_side_effect_free_expr(node: Optional[ast.AST]) -> bool:
 def _merge_contexts(target: Dict[str, Set[str]], source: Dict[str, Set[str]]) -> None:
     for key, values in source.items():
         target.setdefault(key, set()).update(values)
+
+
+def _parse_annotation_expr(source: str) -> Optional[ast.AST]:
+    try:
+        parsed = ast.parse(source, mode="eval")
+    except SyntaxError:
+        return None
+    return parsed.body

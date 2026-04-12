@@ -1,14 +1,21 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 .pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+env/
 .venv/
 venv/
-env/
-htmlcov/
-.coverage
-*.html
-!templates/*.html
-*.json
-*.log
+
+# Local secrets and reports
+.env
+git_activity_report.json
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

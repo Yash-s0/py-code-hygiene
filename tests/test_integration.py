@@ -30,6 +30,11 @@ class IntegrationTests(unittest.TestCase):
             html = out.read_text(encoding="utf-8")
             self.assertIn("Py Code Hygiene Report", html)
             self.assertIn("Dead Code Findings", html)
+            if "severityToggles" in html:
+                self.assertIn("table.sortable", html)
+            else:
+                # Fallback renderer is used when jinja2 is unavailable.
+                self.assertIn("<table>", html)
 
             self.assertIn("meta", report)
             self.assertIn("dead_code", report)

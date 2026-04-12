@@ -6,46 +6,85 @@
 <title>{{ report.meta.tool }} report</title>
 <style>
 :root {
-  --bg: radial-gradient(circle at 10% 10%, #eef6ff 0%, #f7fbff 35%, #fefefe 100%);
+  --bg: #1e1e1e;
+  --surface: #252526;
+  --surface-muted: #2a2d2e;
+  --surface-elev: #2b2b2c;
+  --panel: #202123;
+  --border: #2d2d2d;
+  --border-soft: #33363a;
+  --text: #d4d4d4;
+  --text-muted: #9da5b4;
+  --accent: #007acc;
+  --accent-strong: #1092f3;
+  --accent-soft: rgba(0, 122, 204, 0.18);
+  --sev-high: #f14c4c;
+  --sev-medium: #ffcc00;
+  --sev-low: #3794ff;
+  --dup: #d7ba7d;
+  --shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  --shadow-soft: 0 6px 16px rgba(0, 0, 0, 0.22);
+  --radius-lg: 12px;
+  --radius-md: 10px;
+  --radius-sm: 8px;
+  --code-bg: #1e1e1e;
+  --code-border: #333;
+  --code-text: #dcdcdc;
+}
+body[data-theme="light"] {
+  --bg: #f6f8fb;
   --surface: #ffffff;
-  --surface-muted: #f5f8fc;
-  --text: #132238;
-  --text-muted: #4a5c72;
-  --accent: #0f766e;
-  --accent-soft: rgba(15, 118, 110, 0.14);
-  --danger: #c0392b;
-  --warn: #d68910;
-  --ok: #2e8b57;
-  --border: #dce6f1;
-  --shadow: 0 10px 30px rgba(11, 28, 48, 0.08);
+  --surface-muted: #f3f5f9;
+  --surface-elev: #f9fbff;
+  --panel: #ffffff;
+  --border: #e5e8ef;
+  --border-soft: #dce2ee;
+  --text: #1f2937;
+  --text-muted: #5f6b7b;
+  --accent: #006cb5;
+  --accent-strong: #0082db;
+  --accent-soft: rgba(0, 108, 181, 0.12);
+  --sev-high: #d33636;
+  --sev-medium: #a07f00;
+  --sev-low: #2a73c9;
+  --dup: #a0742b;
+  --shadow: 0 10px 26px rgba(15, 23, 42, 0.1);
+  --shadow-soft: 0 5px 14px rgba(15, 23, 42, 0.08);
+  --code-bg: #1f2937;
+  --code-border: #263244;
+  --code-text: #e8eef8;
 }
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  padding: 26px;
+  padding: 24px;
   background: var(--bg);
   color: var(--text);
-  font-family: "IBM Plex Sans", "Trebuchet MS", "Segoe UI", sans-serif;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.45;
+  transition: background-color 0.22s ease, color 0.22s ease;
 }
 .container {
-  max-width: 1220px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 .header {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: var(--shadow);
 }
 .title {
   margin: 0;
   font-size: clamp(26px, 4vw, 34px);
-  letter-spacing: 0.2px;
+  letter-spacing: -0.02em;
+  font-weight: 700;
 }
 .subtitle {
   color: var(--text-muted);
   margin-top: 8px;
+  font-size: 14px;
 }
 .health {
   margin-top: 14px;
@@ -55,61 +94,125 @@ body {
   font-weight: 700;
 }
 .health-bar {
-  width: 220px;
-  height: 10px;
+  width: 240px;
+  height: 11px;
   border-radius: 99px;
-  background: #dde7f1;
+  background: var(--surface-muted);
   overflow: hidden;
+  border: 1px solid var(--border-soft);
 }
 .health-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ce2f2f 0%, #eba028 45%, #2f9e44 100%);
+  background: linear-gradient(90deg, var(--sev-high) 0%, var(--sev-medium) 50%, #4ec9b0 100%);
 }
 .summary-grid {
   margin-top: 20px;
   display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 }
 .stat-card {
-  background: var(--surface-muted);
+  background: var(--surface-elev);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 12px 14px;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-card:hover {
+  border-color: var(--border-soft);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
 }
 .stat-label { color: var(--text-muted); font-size: 12px; }
 .stat-value { font-size: 24px; font-weight: 700; margin-top: 4px; }
 .controls {
   margin-top: 18px;
   background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 14px;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-soft);
 }
 .controls input,
 .controls select,
 .controls button {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
   font: inherit;
-  background: #fff;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 .controls input {
   min-width: 240px;
   flex: 1;
 }
+.controls input:focus,
+.controls select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(47, 103, 133, 0.16);
+}
 .controls button {
   background: var(--accent);
-  color: #fff;
+  color: #f4f9ff;
   cursor: pointer;
   border-color: transparent;
+  font-weight: 600;
+}
+.controls button:hover {
+  background: var(--accent-strong);
+  transform: translateY(-1px);
 }
 .controls button.secondary {
-  background: #1f4e79;
+  background: #6f8497;
+}
+.severity-toggle-group {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.sev-chip {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  padding: 8px 10px;
+  font: inherit;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: opacity 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  font-weight: 600;
+}
+.sev-chip:hover {
+  transform: translateY(-1px);
+}
+.sev-chip[data-severity="high"] {
+  color: var(--sev-high);
+  border-color: color-mix(in srgb, var(--sev-high) 55%, var(--border));
+  background: color-mix(in srgb, var(--sev-high) 16%, transparent);
+}
+.sev-chip[data-severity="medium"] {
+  color: var(--sev-medium);
+  border-color: color-mix(in srgb, var(--sev-medium) 55%, var(--border));
+  background: color-mix(in srgb, var(--sev-medium) 14%, transparent);
+}
+.sev-chip[data-severity="low"] {
+  color: var(--sev-low);
+  border-color: color-mix(in srgb, var(--sev-low) 55%, var(--border));
+  background: color-mix(in srgb, var(--sev-low) 16%, transparent);
+}
+.sev-chip.off {
+  opacity: 0.42;
+  filter: grayscale(0.4);
 }
 .tab-nav {
   margin-top: 18px;
@@ -124,19 +227,24 @@ body {
   padding: 9px 13px;
   border-radius: 999px;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tab-btn:hover {
+  border-color: var(--border-soft);
+  background: var(--surface-muted);
 }
 .tab-btn.active {
   background: var(--accent-soft);
   border-color: var(--accent);
-  color: #0b5d57;
+  color: #7ec7ff;
   font-weight: 700;
 }
 .panel {
   display: none;
   margin-top: 14px;
-  background: var(--surface);
+  background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   padding: 16px;
 }
@@ -152,56 +260,112 @@ h3 {
 }
 .table-wrap {
   overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 table {
   width: 100%;
   border-collapse: collapse;
 }
+tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.012);
+}
+tbody tr:hover {
+  background: #2a2d2e;
+}
 th, td {
   text-align: left;
   border-bottom: 1px solid var(--border);
-  padding: 9px 8px;
+  padding: 10px 10px;
   vertical-align: top;
 }
 th {
   color: var(--text-muted);
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
+  background: var(--surface-muted);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.sortable th[data-sort] {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 22px;
+}
+.sortable th[data-sort]::after {
+  content: "⇅";
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-52%);
+  font-size: 11px;
+  opacity: 0.45;
+}
+.sortable th.sorted-asc::after {
+  content: "▲";
+  opacity: 0.9;
+}
+.sortable th.sorted-desc::after {
+  content: "▼";
+  opacity: 0.9;
 }
 .small { font-size: 12px; color: var(--text-muted); }
 .badge {
   display: inline-block;
   border-radius: 999px;
   font-size: 11px;
-  padding: 2px 8px;
-  background: #ebf1f8;
+  line-height: 1.2;
+  padding: 4px 9px;
+  background: rgba(157, 165, 180, 0.16);
+  border: 1px solid rgba(157, 165, 180, 0.24);
+  font-weight: 700;
 }
-.badge.high { background: #e7f6ec; color: #17633b; }
-.badge.medium { background: #fff3d7; color: #9c6a00; }
-.badge.low { background: #fde8e6; color: #8f2d21; }
-.badge.dead_code { background: #e8f2ff; color: #204d83; }
-.badge.duplicates { background: #f0e9ff; color: #5f3aa2; }
-.badge.complexity { background: #ffeede; color: #a04f00; }
+.badge.high { color: var(--sev-high); background: rgba(241, 76, 76, 0.14); border-color: rgba(241, 76, 76, 0.34); }
+.badge.medium { color: var(--sev-medium); background: rgba(255, 204, 0, 0.14); border-color: rgba(255, 204, 0, 0.34); }
+.badge.low { color: var(--sev-low); background: rgba(55, 148, 255, 0.16); border-color: rgba(55, 148, 255, 0.35); }
+.badge.dead_code { color: #ff9ea6; background: rgba(241, 76, 76, 0.16); border-color: rgba(241, 76, 76, 0.24); }
+.badge.duplicates { color: #ffe38a; background: rgba(255, 204, 0, 0.12); border-color: rgba(255, 204, 0, 0.2); }
+.badge.complexity { color: #8bc2ff; background: rgba(55, 148, 255, 0.14); border-color: rgba(55, 148, 255, 0.24); }
+.badge.techdebt { color: #c2cad8; }
+.badge.techdebt.debt-low {
+  color: #4ec9b0;
+  background: rgba(78, 201, 176, 0.15);
+  border-color: rgba(78, 201, 176, 0.32);
+}
+.badge.techdebt.debt-medium {
+  color: var(--sev-medium);
+  background: rgba(255, 204, 0, 0.13);
+  border-color: rgba(255, 204, 0, 0.3);
+}
+.badge.techdebt.debt-high {
+  color: var(--sev-high);
+  background: rgba(241, 76, 76, 0.14);
+  border-color: rgba(241, 76, 76, 0.33);
+}
 .group {
   border: 1px solid var(--border);
-  border-left: 5px solid #9467bd;
-  border-radius: 10px;
+  border-left: 4px solid #5d6a78;
+  border-radius: var(--radius-md);
   padding: 12px;
   margin-bottom: 12px;
-  background: #fcfaff;
+  background: var(--surface);
 }
-.group.exact { border-left-color: #2980b9; background: #f6fbff; }
-.group.near { border-left-color: #9b59b6; background: #fcf8ff; }
+.group.exact { border-left-color: var(--accent); }
+.group.near { border-left-color: var(--dup); }
 .group pre {
   margin: 8px 0 0;
   padding: 10px;
-  background: #111827;
-  color: #e7eef8;
-  border-radius: 8px;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  color: var(--code-text);
+  border-radius: var(--radius-sm);
   overflow-x: auto;
   white-space: pre-wrap;
-  font-family: "IBM Plex Mono", "Consolas", monospace;
+  font-family: "JetBrains Mono", "Consolas", monospace;
   font-size: 12px;
 }
 .error-list {
@@ -211,12 +375,265 @@ th {
 .raw {
   max-height: 70vh;
   overflow: auto;
-  background: #0f172a;
-  color: #dbeafe;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  color: var(--code-text);
   padding: 14px;
-  border-radius: 10px;
-  font-family: "IBM Plex Mono", "Consolas", monospace;
+  border-radius: var(--radius-sm);
+  font-family: "JetBrains Mono", "Consolas", monospace;
   font-size: 12px;
+}
+.mix-list {
+  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+.mix-item {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+.mix-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.mix-track {
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-soft);
+  position: relative;
+}
+.mix-fill {
+  height: 100%;
+  border-radius: 999px;
+  width: 0;
+  transition: width 0.55s ease;
+}
+.mix-fill.mix-dead_code {
+  background: linear-gradient(90deg, rgba(241, 76, 76, 0.78) 0%, #f14c4c 100%);
+}
+.mix-fill.mix-duplicates {
+  background: linear-gradient(90deg, rgba(255, 204, 0, 0.68) 0%, #ffcc00 100%);
+}
+.mix-fill.mix-complexity {
+  background: linear-gradient(90deg, rgba(55, 148, 255, 0.72) 0%, #3794ff 100%);
+}
+.mix-count {
+  font-size: 12px;
+  font-weight: 700;
+}
+.mini-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.dup-snippet {
+  margin-top: 6px;
+}
+.dup-snippet > summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: #83c5f9;
+}
+.row-actions {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.action-btn {
+  border: 1px solid var(--border-soft);
+  background: var(--surface-muted);
+  color: #c5d2e6;
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.action-btn:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-muted));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-soft));
+  transform: translateY(-1px);
+}
+.action-btn.secondary {
+  background: #2f3235;
+  color: #bfc8d7;
+  border-color: #3a3d40;
+}
+.action-btn.secondary:hover {
+  background: #393c40;
+  border-color: #4c4f54;
+}
+body[data-theme="light"] .action-btn.secondary {
+  background: #eef2f8;
+  color: #40546c;
+  border-color: #cfd7e4;
+}
+body[data-theme="light"] .action-btn.secondary:hover {
+  background: #e3eaf4;
+  border-color: #b9c6da;
+}
+.issue-template {
+  display: none;
+}
+.table-hint {
+  margin-top: 8px;
+  margin-bottom: 10px;
+}
+.file-cell {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-width: 320px;
+}
+.file-path {
+  overflow-wrap: anywhere;
+}
+.file-heat {
+  width: 4px;
+  border-radius: 999px;
+  min-height: 24px;
+  margin-top: 2px;
+  background: linear-gradient(180deg, rgba(55, 148, 255, 0.55) 0%, rgba(55, 148, 255, 0.2) 100%);
+  box-shadow: 0 0 0 1px rgba(55, 148, 255, 0.2);
+}
+.top-file-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.top-file-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.top-file-row.row-focused {
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+}
+.top-file-row .priority-score {
+  font-weight: 700;
+  color: #9dd6ff;
+}
+.issue-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 19, 21, 0.54);
+  z-index: 120;
+  display: none;
+  padding: 16px;
+}
+.issue-overlay.open {
+  display: flex;
+  justify-content: flex-end;
+}
+.issue-drawer {
+  width: min(880px, 100%);
+  height: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 30px 72px rgba(0, 0, 0, 0.5);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  animation: slideIn 0.2s ease;
+}
+@keyframes slideIn {
+  from { transform: translateX(16px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.issue-drawer-top {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-muted);
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+.issue-drawer-title {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.issue-drawer-body {
+  padding: 14px 16px 18px;
+  overflow: auto;
+}
+.issue-list {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+.issue-item {
+  border: 1px solid var(--border);
+  background: var(--surface-elev);
+  border-radius: var(--radius-md);
+  padding: 11px;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.issue-item:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-soft);
+}
+.issue-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.issue-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.issue-code {
+  margin: 8px 0 0;
+  padding: 9px;
+  background: var(--code-bg);
+  color: var(--code-text);
+  border: 1px solid var(--code-border);
+  border-radius: var(--radius-sm);
+  font-family: "JetBrains Mono", "Consolas", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+.issue-inline-preview {
+  margin-top: 8px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.22s ease, opacity 0.2s ease;
+}
+.issue-item:hover .issue-inline-preview {
+  opacity: 1;
+  max-height: 260px;
+}
+.issue-code.preview {
+  position: relative;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.drawer-skeleton {
+  display: grid;
+  gap: 10px;
+}
+.skeleton-line {
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(157, 165, 180, 0.1) 20%, rgba(157, 165, 180, 0.22) 50%, rgba(157, 165, 180, 0.1) 80%);
+  background-size: 200% 100%;
+  animation: shimmer 1s infinite linear;
+}
+.skeleton-line.lg { height: 14px; width: 58%; }
+.skeleton-line.md { height: 12px; width: 92%; }
+.skeleton-line.sm { height: 12px; width: 72%; }
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
 }
 .hidden-by-filter {
   display: none !important;
@@ -225,17 +642,31 @@ th {
   body { padding: 12px; }
   .controls input { min-width: 100%; }
   .health-bar { width: 170px; }
+  .issue-overlay {
+    padding: 8px;
+  }
+  .issue-drawer {
+    width: 100%;
+    border-radius: 10px;
+  }
+  .issue-list {
+    grid-template-columns: 1fr;
+  }
+  .file-cell {
+    min-width: 220px;
+  }
 }
 </style>
 </head>
-<body>
+<body data-theme="dark">
 <div class="container">
   <section class="header">
     <h1 class="title">Py Code Hygiene Report</h1>
     <div class="subtitle">
       <strong>Target:</strong> {{ report.meta.target }}<br>
       <strong>Generated:</strong> {{ report.meta.generated_at }}<br>
-      <strong>Python:</strong> {{ report.meta.python }}
+      <strong>Python:</strong> {{ report.meta.python }}<br>
+      <strong>Snapshot:</strong> Re-run `py-code-hygiene scan` after code changes to refresh findings.
     </div>
     <div class="health">
       Health {{ report.summary.health_score }}%
@@ -243,7 +674,10 @@ th {
     </div>
     <div class="summary-grid">
       <div class="stat-card"><div class="stat-label">Files Analyzed</div><div class="stat-value">{{ report.summary.files_analyzed }}</div></div>
+      <div class="stat-card"><div class="stat-label">Code Lines</div><div class="stat-value">{{ report.summary.code_lines }}</div></div>
       <div class="stat-card"><div class="stat-label">Total Findings</div><div class="stat-value">{{ report.summary.total_findings }}</div></div>
+      <div class="stat-card"><div class="stat-label">Findings / KLOC</div><div class="stat-value">{{ report.summary.finding_density_per_kloc }}</div></div>
+      <div class="stat-card"><div class="stat-label">High Confidence</div><div class="stat-value">{{ report.summary.by_confidence.high }}</div></div>
       <div class="stat-card"><div class="stat-label">Dead Code</div><div class="stat-value">{{ report.summary.by_analyzer.dead_code }}</div></div>
       <div class="stat-card"><div class="stat-label">Duplicate Groups</div><div class="stat-value">{{ report.summary.by_analyzer.duplicates }}</div></div>
       <div class="stat-card"><div class="stat-label">Complexity Hotspots</div><div class="stat-value">{{ report.summary.by_analyzer.complexity }}</div></div>
@@ -265,8 +699,14 @@ th {
       <option value="medium">Medium</option>
       <option value="low">Low</option>
     </select>
+    <div class="severity-toggle-group" id="severityToggles" aria-label="Severity toggles">
+      <button type="button" class="sev-chip" data-severity="high">High</button>
+      <button type="button" class="sev-chip" data-severity="medium">Medium</button>
+      <button type="button" class="sev-chip" data-severity="low">Low</button>
+    </div>
     <button id="clearFilters" type="button">Clear Filters</button>
     <button id="downloadJson" class="secondary" type="button">Download JSON</button>
+    <button id="themeToggle" class="secondary" type="button" title="Toggle dark/light">Light Theme</button>
     <span class="small" id="filterCount">Showing all entries</span>
   </section>
 
@@ -280,14 +720,97 @@ th {
 
   <section class="panel active" data-panel="overview">
     <h2>Overview</h2>
-    <h3>Top Files By Code Lines</h3>
+    <h3>Analyzer Mix</h3>
+    {% set total_findings = report.summary.total_findings if report.summary.total_findings else 1 %}
+    <div class="mix-list">
+      {% for analyzer_key, analyzer_label in [("dead_code", "Dead Code"), ("duplicates", "Duplicates"), ("complexity", "Complexity")] %}
+      {% set analyzer_count = report.summary.by_analyzer[analyzer_key] %}
+      {% set analyzer_pct = (analyzer_count * 100 / total_findings) %}
+      <div class="mix-item">
+        <div class="mix-label">{{ analyzer_label }}</div>
+        <div class="mix-track" title="{{ analyzer_count }} findings ({{ analyzer_pct|round(1) }}%)">
+          <div class="mix-fill mix-{{ analyzer_key }}" data-width="{{ analyzer_pct|round(2) }}"></div>
+        </div>
+        <div class="mix-count">{{ analyzer_count }} ({{ analyzer_pct|round(1) }}%)</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="mini-note">Confidence split: high={{ report.summary.by_confidence.high }}, medium={{ report.summary.by_confidence.medium }}, low={{ report.summary.by_confidence.low }}.</div>
+
+    <h3 style="margin-top:16px;">Top Files To Fix First</h3>
+    <div class="small table-hint">Tip: click a row to open issue preview. Keyboard: ↑/↓ or j/k to navigate, Enter to open, Esc to close.</div>
     <div class="table-wrap">
-      <table>
+      <table class="sortable">
         <thead>
-          <tr><th>File</th><th>Code</th><th>Comments</th><th>Functions</th><th>Classes</th></tr>
+          <tr><th data-sort="text">File</th><th data-sort="number">Priority Score</th><th data-sort="number">Total Issues</th><th data-sort="number">High</th><th data-sort="number">Tech Debt</th><th data-sort="number">First Line</th><th data-sort="text">Actions</th><th data-sort="number">Preview</th></tr>
         </thead>
         <tbody>
-          {% for file in report.files[:20] %}
+          {% for row in report.summary.top_files[:20] %}
+          {% set tech_debt = (row.dead_code * 3) + (row.duplicates * 2) + row.complexity %}
+          <tr class="top-file-row" tabindex="0" data-file="{{ row.file }}" data-total="{{ row.total_findings }}" data-techdebt="{{ tech_debt }}">
+            <td class="file-cell" data-sort-value="{{ row.file }}">
+              <span class="file-heat" data-issues="{{ row.total_findings }}" aria-hidden="true"></span>
+              <span class="file-path">{{ row.file }}</span>
+            </td>
+            <td data-sort-value="{{ row.priority_score }}"><span class="priority-score">{{ row.priority_score }}</span></td>
+            <td data-sort-value="{{ row.total_findings }}">{{ row.total_findings }}</td>
+            <td data-sort-value="{{ row.high }}">{{ row.high }}</td>
+            <td data-sort-value="{{ tech_debt }}">
+              <span class="badge techdebt debt-badge" data-debt="{{ tech_debt }}" title="Tech debt formula: dead_code*3 ({{ row.dead_code }}*3) + duplicates*2 ({{ row.duplicates }}*2) + complexity*1 ({{ row.complexity }}*1)">
+                {{ tech_debt }}
+              </span>
+            </td>
+            <td data-sort-value="{{ row.first_line }}">{{ row.first_line if row.first_line else '-' }}</td>
+            <td>
+              <span class="row-actions">
+                <button class="action-btn open-file-btn" type="button" data-file="{{ row.file }}" data-line="{{ row.first_line }}">Open</button>
+                <button class="action-btn secondary copy-loc-btn" type="button" data-file="{{ row.file }}" data-line="{{ row.first_line }}">Copy</button>
+              </span>
+            </td>
+            <td data-sort-value="{{ row.issues_total }}">
+              <button class="action-btn view-issues-btn" type="button" data-file="{{ row.file }}" data-total="{{ row.issues_total }}">View ({{ row.issues_total }})</button>
+              <div class="issue-template">
+                <div class="mini-note">Showing {{ row.issues|length }} of {{ row.issues_total }} issues in this preview.</div>
+                <div class="issue-list">
+                  {% for issue in row.issues %}
+                  <div class="issue-item">
+                    <div class="issue-head">
+                      <span class="badge {{ issue.confidence }}">{{ issue.confidence }}</span>
+                      <span class="badge {{ issue.analyzer }}">{{ issue.analyzer }}</span>
+                      <span class="issue-meta">{{ row.file }}:{{ issue.line }} | {{ issue.category }}</span>
+                    </div>
+                    <div class="small">{{ issue.message }}{% if issue.symbol %} | {{ issue.symbol }}{% endif %}</div>
+                    {% if issue.code %}<pre class="issue-code">{{ issue.code }}</pre>{% endif %}
+                    {% if issue.code %}
+                    <div class="issue-inline-preview">
+                      <div class="small">Hover preview around line {{ issue.line }}</div>
+                      <pre class="issue-code preview">{{ issue.code }}</pre>
+                    </div>
+                    {% endif %}
+                    <div class="row-actions" style="margin-top:6px;">
+                      <button class="action-btn open-file-btn" type="button" data-file="{{ row.file }}" data-line="{{ issue.line }}">Open</button>
+                      <button class="action-btn secondary copy-loc-btn" type="button" data-file="{{ row.file }}" data-line="{{ issue.line }}">Copy</button>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Top Files By Code Lines</h3>
+    {% set top_code_files = report.files|sort(attribute='code_lines', reverse=True) %}
+    <div class="table-wrap">
+      <table class="sortable">
+        <thead>
+          <tr><th data-sort="text">File</th><th data-sort="number">Code</th><th data-sort="number">Comments</th><th data-sort="number">Functions</th><th data-sort="number">Classes</th></tr>
+        </thead>
+        <tbody>
+          {% for file in top_code_files[:20] %}
           <tr>
             <td>{{ file.file }}</td>
             <td>{{ file.code_lines }}</td>
@@ -316,20 +839,26 @@ th {
     <h2>Dead Code Findings</h2>
     <div class="small">Total active dead-code findings: {{ report.dead_code.summary.total }} | Suppressed: {{ report.dead_code.summary.suppressed }}</div>
     <div class="table-wrap" style="margin-top:12px;">
-      <table>
+      <table class="sortable">
         <thead>
-          <tr><th>Confidence</th><th>Category</th><th>Location</th><th>Symbol</th><th>Message</th></tr>
+          <tr><th data-sort="text">Confidence</th><th data-sort="text">Category</th><th data-sort="number">Location</th><th data-sort="text">Symbol</th><th data-sort="text">Message</th><th data-sort="text">Open</th></tr>
         </thead>
         <tbody>
           {% for finding in report.dead_code.findings %}
-          <tr class="filterable" data-analyzer="dead_code" data-confidence="{{ finding.confidence }}" data-text="{{ finding.file }} {{ finding.symbol }} {{ finding.category }} {{ finding.message }} {{ finding.evidence|join(' ') }}">
+          <tr class="filterable" data-analyzer="dead_code" data-confidence="{{ finding.confidence }}" data-severity="{{ finding.confidence }}" data-text="{{ finding.file }} {{ finding.symbol }} {{ finding.category }} {{ finding.message }} {{ finding.evidence|join(' ') }}">
             <td><span class="badge {{ finding.confidence }}">{{ finding.confidence }}</span></td>
             <td>{{ finding.category }}</td>
-            <td>{{ finding.file }}:{{ finding.line_start }}</td>
+            <td data-sort-value="{{ finding.line_start }}">{{ finding.file }}:{{ finding.line_start }}</td>
             <td>{{ finding.symbol or '-' }}</td>
             <td>
               <div>{{ finding.message }}</div>
               {% if finding.evidence %}<div class="small">{{ finding.evidence|join('; ') }}</div>{% endif %}
+            </td>
+            <td>
+              <span class="row-actions">
+                <button class="action-btn open-file-btn" type="button" data-file="{{ finding.file }}" data-line="{{ finding.line_start }}">Open</button>
+                <button class="action-btn secondary copy-loc-btn" type="button" data-file="{{ finding.file }}" data-line="{{ finding.line_start }}">Copy</button>
+              </span>
             </td>
           </tr>
           {% endfor %}
@@ -343,7 +872,7 @@ th {
     <div class="small">Exact groups: {{ report.duplicates.summary.exact_groups }} | Near groups: {{ report.duplicates.summary.near_groups }}</div>
     <div style="margin-top:12px;">
       {% for group in report.duplicates.groups %}
-      <article class="group {{ group.kind }} filterable" data-analyzer="duplicates" data-confidence="{{ group.confidence }}" data-text="{{ group.reason }} {{ group.kind }} {{ group.items|map(attribute='file')|join(' ') }} {{ group.items|map(attribute='name')|join(' ') }}">
+      <article class="group {{ group.kind }} filterable" data-analyzer="duplicates" data-confidence="{{ group.confidence }}" data-severity="{{ group.confidence }}" data-text="{{ group.reason }} {{ group.kind }} {{ group['items']|map(attribute='file')|join(' ') }} {{ group['items']|map(attribute='name')|join(' ') }}">
         <div>
           <span class="badge duplicates">{{ group.kind }}</span>
           <span class="badge {{ group.confidence }}">{{ group.confidence }}</span>
@@ -351,10 +880,17 @@ th {
           <span class="small" style="margin-left:8px;">Similarity {{ group.similarity }}</span>
         </div>
         <div class="small" style="margin-top:6px;">{{ group.reason }}</div>
-        {% for item in group.items %}
+        {% for item in group['items'] %}
         <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
           <strong>{{ item.file }}:{{ item.line_start }}</strong> - {{ item.qualname }}
-          <pre>{{ item.snippet }}</pre>
+          <span class="row-actions" style="margin-left:8px;">
+            <button class="action-btn open-file-btn" type="button" data-file="{{ item.file }}" data-line="{{ item.line_start }}">Open</button>
+            <button class="action-btn secondary copy-loc-btn" type="button" data-file="{{ item.file }}" data-line="{{ item.line_start }}">Copy</button>
+          </span>
+          <details class="dup-snippet">
+            <summary>Show snippet</summary>
+            <pre>{{ item.snippet }}</pre>
+          </details>
         </div>
         {% endfor %}
       </article>
@@ -369,18 +905,24 @@ th {
     <div class="small">Threshold: {{ report.complexity.summary.threshold }} | Hotspots: {{ report.complexity.summary.hotspots }}</div>
 
     <div class="table-wrap" style="margin-top:12px;">
-      <table>
+      <table class="sortable">
         <thead>
-          <tr><th>Confidence</th><th>Complexity</th><th>Function</th><th>Location</th><th>Guidance</th></tr>
+          <tr><th data-sort="text">Confidence</th><th data-sort="number">Complexity</th><th data-sort="text">Function</th><th data-sort="number">Location</th><th data-sort="text">Guidance</th><th data-sort="text">Open</th></tr>
         </thead>
         <tbody>
           {% for hotspot in report.complexity.hotspots %}
-          <tr class="filterable" data-analyzer="complexity" data-confidence="{{ hotspot.confidence }}" data-text="{{ hotspot.file }} {{ hotspot.symbol }} {{ hotspot.message }} {{ hotspot.evidence|join(' ') }}">
+          <tr class="filterable" data-analyzer="complexity" data-confidence="{{ hotspot.confidence }}" data-severity="{{ hotspot.confidence }}" data-text="{{ hotspot.file }} {{ hotspot.symbol }} {{ hotspot.message }} {{ hotspot.evidence|join(' ') }}">
             <td><span class="badge {{ hotspot.confidence }}">{{ hotspot.confidence }}</span></td>
             <td>{{ hotspot.complexity }}</td>
             <td>{{ hotspot.qualname }}</td>
-            <td>{{ hotspot.file }}:{{ hotspot.line_start }}</td>
+            <td data-sort-value="{{ hotspot.line_start }}">{{ hotspot.file }}:{{ hotspot.line_start }}</td>
             <td>{{ hotspot.suggested_action }}</td>
+            <td>
+              <span class="row-actions">
+                <button class="action-btn open-file-btn" type="button" data-file="{{ hotspot.file }}" data-line="{{ hotspot.line_start }}">Open</button>
+                <button class="action-btn secondary copy-loc-btn" type="button" data-file="{{ hotspot.file }}" data-line="{{ hotspot.line_start }}">Copy</button>
+              </span>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -389,15 +931,15 @@ th {
 
     <h3 style="margin-top:18px;">Top Functions</h3>
     <div class="table-wrap">
-      <table>
-        <thead><tr><th>Complexity</th><th>Function</th><th>File</th><th>Lines</th></tr></thead>
+      <table class="sortable">
+        <thead><tr><th data-sort="number">Complexity</th><th data-sort="text">Function</th><th data-sort="text">File</th><th data-sort="number">Lines</th></tr></thead>
         <tbody>
           {% for row in report.complexity.top_functions %}
           <tr>
-            <td>{{ row.complexity }}</td>
+            <td data-sort-value="{{ row.complexity }}">{{ row.complexity }}</td>
             <td>{{ row.qualname }}</td>
-            <td>{{ row.file }}:{{ row.line_start }}</td>
-            <td>{{ row.lines }}</td>
+            <td data-sort-value="{{ row.line_start }}">{{ row.file }}:{{ row.line_start }}</td>
+            <td data-sort-value="{{ row.lines }}">{{ row.lines }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -408,6 +950,19 @@ th {
   <section class="panel" data-panel="raw">
     <h2>Raw JSON</h2>
     <pre class="raw" id="rawJson">{{ report_json }}</pre>
+  </section>
+</div>
+
+<div class="issue-overlay" id="issueOverlay" aria-hidden="true">
+  <section class="issue-drawer" role="dialog" aria-modal="true" aria-label="File issues">
+    <div class="issue-drawer-top">
+      <div>
+        <div class="small">Issue Preview</div>
+        <h3 class="issue-drawer-title" id="issueDrawerTitle"></h3>
+      </div>
+      <button id="issueDrawerClose" class="action-btn secondary" type="button">Close</button>
+    </div>
+    <div class="issue-drawer-body" id="issueDrawerBody"></div>
   </section>
 </div>
 
@@ -426,9 +981,20 @@ for (const tab of tabs) {
 const searchInput = document.getElementById('searchInput');
 const analyzerFilter = document.getElementById('analyzerFilter');
 const confidenceFilter = document.getElementById('confidenceFilter');
+const severityButtons = Array.from(document.querySelectorAll('.sev-chip'));
 const clearFilters = document.getElementById('clearFilters');
 const filterCount = document.getElementById('filterCount');
 const filterables = Array.from(document.querySelectorAll('.filterable'));
+const enabledSeverities = new Set(['high', 'medium', 'low']);
+const issueOverlay = document.getElementById('issueOverlay');
+const issueDrawerBody = document.getElementById('issueDrawerBody');
+const issueDrawerTitle = document.getElementById('issueDrawerTitle');
+const issueDrawerClose = document.getElementById('issueDrawerClose');
+const themeToggle = document.getElementById('themeToggle');
+const mixFills = Array.from(document.querySelectorAll('.mix-fill'));
+let topFileRows = [];
+let selectedTopFileIndex = 0;
+let drawerRenderTimer = null;
 
 function applyFilters() {
   const q = searchInput.value.trim().toLowerCase();
@@ -440,12 +1006,14 @@ function applyFilters() {
     const text = (el.dataset.text || '').toLowerCase();
     const a = el.dataset.analyzer || '';
     const c = el.dataset.confidence || '';
+    const s = el.dataset.severity || c || 'medium';
 
     const qMatch = !q || text.includes(q);
     const aMatch = analyzer === 'all' || analyzer === a;
     const cMatch = confidence === 'all' || confidence === c;
+    const sMatch = enabledSeverities.has(s);
 
-    if (qMatch && aMatch && cMatch) {
+    if (qMatch && aMatch && cMatch && sMatch) {
       el.classList.remove('hidden-by-filter');
       visible += 1;
     } else {
@@ -453,7 +1021,8 @@ function applyFilters() {
     }
   }
 
-  if (!q && analyzer === 'all' && confidence === 'all') {
+  const allSeveritiesEnabled = enabledSeverities.size === severityButtons.length;
+  if (!q && analyzer === 'all' && confidence === 'all' && allSeveritiesEnabled) {
     filterCount.textContent = 'Showing all entries';
   } else {
     filterCount.textContent = `Showing ${visible} matching entries`;
@@ -465,10 +1034,36 @@ for (const node of [searchInput, analyzerFilter, confidenceFilter]) {
   node.addEventListener('change', applyFilters);
 }
 
+for (const button of severityButtons) {
+  button.addEventListener('click', () => {
+    const severity = button.dataset.severity;
+    if (!severity) {
+      return;
+    }
+
+    if (enabledSeverities.has(severity) && enabledSeverities.size > 1) {
+      enabledSeverities.delete(severity);
+      button.classList.add('off');
+    } else if (!enabledSeverities.has(severity)) {
+      enabledSeverities.add(severity);
+      button.classList.remove('off');
+    }
+
+    applyFilters();
+  });
+}
+
 clearFilters.addEventListener('click', () => {
   searchInput.value = '';
   analyzerFilter.value = 'all';
   confidenceFilter.value = 'all';
+  enabledSeverities.clear();
+  for (const severity of ['high', 'medium', 'low']) {
+    enabledSeverities.add(severity);
+  }
+  for (const button of severityButtons) {
+    button.classList.remove('off');
+  }
   applyFilters();
 });
 
@@ -484,6 +1079,378 @@ downloadJson.addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
+function initSortableTables() {
+  const tables = Array.from(document.querySelectorAll('table.sortable'));
+  for (const table of tables) {
+    const headers = Array.from(table.querySelectorAll('th[data-sort]'));
+    const tbody = table.querySelector('tbody');
+    if (!tbody || !headers.length) {
+      continue;
+    }
+
+    headers.forEach((header, index) => {
+      header.addEventListener('click', () => {
+        const currentlyAsc = header.classList.contains('sorted-asc');
+        headers.forEach((h) => h.classList.remove('sorted-asc', 'sorted-desc'));
+        header.classList.add(currentlyAsc ? 'sorted-desc' : 'sorted-asc');
+        const direction = currentlyAsc ? -1 : 1;
+        const sortType = header.dataset.sort || 'text';
+
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.sort((left, right) => {
+          const leftVal = getSortValue(left.children[index], sortType);
+          const rightVal = getSortValue(right.children[index], sortType);
+
+          if (leftVal < rightVal) {
+            return -1 * direction;
+          }
+          if (leftVal > rightVal) {
+            return 1 * direction;
+          }
+          return 0;
+        });
+
+        for (const row of rows) {
+          tbody.appendChild(row);
+        }
+        refreshTopFileRows();
+        initHeatmapAndDebt();
+      });
+    });
+  }
+}
+
+function getSortValue(cell, sortType) {
+  if (!cell) {
+    return sortType === 'number' ? 0 : '';
+  }
+  const custom = cell.dataset.sortValue;
+  if (custom !== undefined) {
+    return sortType === 'number' ? Number(custom) || 0 : custom.toLowerCase();
+  }
+  const text = (cell.textContent || '').trim();
+  if (sortType === 'number') {
+    const normalized = text.replace(/[^0-9.-]/g, '');
+    const parsed = Number(normalized);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return text.toLowerCase();
+}
+
+function animateMixBars() {
+  requestAnimationFrame(() => {
+    for (const bar of mixFills) {
+      const width = Number(bar.getAttribute('data-width') || '0');
+      bar.style.width = `${Math.max(0, Math.min(width, 100))}%`;
+    }
+  });
+}
+
+function mixRgb(colorA, colorB, ratio) {
+  const safe = Math.max(0, Math.min(ratio, 1));
+  return [
+    Math.round(colorA[0] + ((colorB[0] - colorA[0]) * safe)),
+    Math.round(colorA[1] + ((colorB[1] - colorA[1]) * safe)),
+    Math.round(colorA[2] + ((colorB[2] - colorA[2]) * safe)),
+  ];
+}
+
+function heatColor(ratio) {
+  if (ratio <= 0.5) {
+    return mixRgb([31, 78, 133], [255, 204, 0], ratio / 0.5);
+  }
+  return mixRgb([255, 204, 0], [241, 76, 76], (ratio - 0.5) / 0.5);
+}
+
+function initHeatmapAndDebt() {
+  const heatBars = Array.from(document.querySelectorAll('.file-heat'));
+  const debtBadges = Array.from(document.querySelectorAll('.debt-badge'));
+  const maxIssues = Math.max(
+    1,
+    ...heatBars.map((bar) => Number(bar.getAttribute('data-issues') || '0')),
+  );
+  const maxDebt = Math.max(
+    1,
+    ...debtBadges.map((badge) => Number(badge.getAttribute('data-debt') || '0')),
+  );
+
+  for (const bar of heatBars) {
+    const issues = Number(bar.getAttribute('data-issues') || '0');
+    const ratio = Math.max(0, Math.min(issues / maxIssues, 1));
+    const [r, g, b] = heatColor(ratio);
+    bar.style.background = `linear-gradient(180deg, rgb(${r}, ${g}, ${b}) 0%, rgba(${r}, ${g}, ${b}, 0.24) 100%)`;
+    bar.style.boxShadow = `0 0 0 1px rgba(${r}, ${g}, ${b}, 0.24)`;
+  }
+
+  for (const badge of debtBadges) {
+    const debt = Number(badge.getAttribute('data-debt') || '0');
+    const ratio = Math.max(0, Math.min(debt / maxDebt, 1));
+    badge.classList.remove('debt-low', 'debt-medium', 'debt-high');
+    if (ratio < 0.34) {
+      badge.classList.add('debt-low');
+    } else if (ratio < 0.67) {
+      badge.classList.add('debt-medium');
+    } else {
+      badge.classList.add('debt-high');
+    }
+  }
+}
+
+function drawerSkeleton() {
+  return [
+    '<div class="drawer-skeleton">',
+    '<div class="skeleton-line lg"></div>',
+    '<div class="skeleton-line md"></div>',
+    '<div class="skeleton-line sm"></div>',
+    '<div class="skeleton-line md"></div>',
+    '</div>',
+  ].join('');
+}
+
+function openIssueDrawer(file, html) {
+  if (!issueOverlay || !issueDrawerBody || !issueDrawerTitle) {
+    return;
+  }
+  if (drawerRenderTimer) {
+    clearTimeout(drawerRenderTimer);
+    drawerRenderTimer = null;
+  }
+  issueDrawerTitle.textContent = file || 'Issue preview';
+  issueDrawerBody.innerHTML = drawerSkeleton();
+  issueOverlay.classList.add('open');
+  issueOverlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  drawerRenderTimer = window.setTimeout(() => {
+    issueDrawerBody.innerHTML = html || '<div class="small">No issue preview available.</div>';
+  }, 110);
+}
+
+function closeIssueDrawer() {
+  if (!issueOverlay || !issueDrawerBody) {
+    return;
+  }
+  if (drawerRenderTimer) {
+    clearTimeout(drawerRenderTimer);
+    drawerRenderTimer = null;
+  }
+  issueOverlay.classList.remove('open');
+  issueOverlay.setAttribute('aria-hidden', 'true');
+  issueDrawerBody.innerHTML = '';
+  document.body.style.overflow = '';
+}
+
+function rowIssueHtml(row) {
+  const template = row ? row.querySelector('.issue-template') : null;
+  return template ? template.innerHTML : '<div class="small">No issue preview available.</div>';
+}
+
+function setFocusedTopFileRow(index, scrollIntoView = true) {
+  if (!topFileRows.length) {
+    selectedTopFileIndex = 0;
+    return;
+  }
+  const safeIndex = Math.max(0, Math.min(index, topFileRows.length - 1));
+  selectedTopFileIndex = safeIndex;
+  topFileRows.forEach((row, rowIndex) => {
+    row.classList.toggle('row-focused', rowIndex === safeIndex);
+  });
+  const activeRow = topFileRows[safeIndex];
+  if (activeRow && scrollIntoView) {
+    activeRow.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function refreshTopFileRows() {
+  topFileRows = Array.from(document.querySelectorAll('.top-file-row'));
+  if (!topFileRows.length) {
+    return;
+  }
+
+  topFileRows.forEach((row) => {
+    if (row.dataset.bound === '1') {
+      return;
+    }
+    row.dataset.bound = '1';
+    row.addEventListener('click', (event) => {
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest('button, a, summary, details')) {
+        return;
+      }
+      const idx = topFileRows.indexOf(row);
+      setFocusedTopFileRow(idx >= 0 ? idx : 0, false);
+      openIssueDrawer(row.dataset.file || 'Issue preview', rowIssueHtml(row));
+    });
+    row.addEventListener('focus', () => {
+      const idx = topFileRows.indexOf(row);
+      setFocusedTopFileRow(idx >= 0 ? idx : 0, false);
+    });
+    row.addEventListener('mouseenter', () => {
+      const idx = topFileRows.indexOf(row);
+      setFocusedTopFileRow(idx >= 0 ? idx : 0, false);
+    });
+  });
+  setFocusedTopFileRow(selectedTopFileIndex, false);
+}
+
+function applyTheme(themeName) {
+  const resolved = themeName === 'light' ? 'light' : 'dark';
+  document.body.setAttribute('data-theme', resolved);
+  if (themeToggle) {
+    themeToggle.textContent = resolved === 'dark' ? 'Light Theme' : 'Dark Theme';
+  }
+  try {
+    window.localStorage.setItem('pycodehygiene-theme', resolved);
+  } catch (_error) {
+    // Ignore storage failures.
+  }
+}
+
+function initTheme() {
+  let savedTheme = 'dark';
+  try {
+    savedTheme = window.localStorage.getItem('pycodehygiene-theme') || 'dark';
+  } catch (_error) {
+    savedTheme = 'dark';
+  }
+  applyTheme(savedTheme);
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const current = document.body.getAttribute('data-theme') || 'dark';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    });
+  }
+}
+
+function toVsCodeUri(filePath, line) {
+  const normalized = String(filePath || '').replace(/\\/g, '/');
+  const encodedPath = normalized
+    .split('/')
+    .map((part) => encodeURIComponent(part))
+    .join('/');
+  const path = normalized.startsWith('/') ? encodedPath : `/${encodedPath}`;
+  const ln = Number(line) > 0 ? Number(line) : 1;
+  return `vscode://file/${path}:${ln}:1`;
+}
+
+async function copyText(text) {
+  if (!text) {
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (_error) {
+    window.prompt('Copy location', text);
+  }
+}
+
+document.addEventListener('click', (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+
+  const viewIssuesButton = target.closest('.view-issues-btn');
+  if (viewIssuesButton) {
+    const file = viewIssuesButton.getAttribute('data-file') || '';
+    const container = viewIssuesButton.parentElement;
+    const template = container ? container.querySelector('.issue-template') : null;
+    const html = template ? template.innerHTML : '<div class="small">No issue preview available.</div>';
+    const row = viewIssuesButton.closest('.top-file-row');
+    if (row) {
+      const idx = topFileRows.indexOf(row);
+      if (idx >= 0) {
+        setFocusedTopFileRow(idx, false);
+      }
+    }
+    openIssueDrawer(file, html);
+    return;
+  }
+
+  const openButton = target.closest('.open-file-btn');
+  if (openButton) {
+    const file = openButton.getAttribute('data-file') || '';
+    const line = openButton.getAttribute('data-line') || '1';
+    const uri = toVsCodeUri(file, line);
+    window.location.href = uri;
+    return;
+  }
+
+  const copyButton = target.closest('.copy-loc-btn');
+  if (copyButton) {
+    const file = copyButton.getAttribute('data-file') || '';
+    const line = copyButton.getAttribute('data-line') || '1';
+    const text = `${file}:${Number(line) > 0 ? line : 1}`;
+    copyText(text);
+  }
+});
+
+if (issueDrawerClose) {
+  issueDrawerClose.addEventListener('click', closeIssueDrawer);
+}
+if (issueOverlay) {
+  issueOverlay.addEventListener('click', (event) => {
+    if (event.target === issueOverlay) {
+      closeIssueDrawer();
+    }
+  });
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    closeIssueDrawer();
+    return;
+  }
+
+  if (event.key !== '/') {
+    const key = event.key;
+    const activeTag = document.activeElement && document.activeElement.tagName
+      ? document.activeElement.tagName.toLowerCase()
+      : '';
+    const interactiveFocus = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+    if (interactiveFocus) {
+      return;
+    }
+    if (issueOverlay && issueOverlay.classList.contains('open')) {
+      return;
+    }
+    if (!topFileRows.length) {
+      return;
+    }
+    if (key === 'ArrowDown' || key === 'j') {
+      event.preventDefault();
+      setFocusedTopFileRow(selectedTopFileIndex + 1);
+      return;
+    }
+    if (key === 'ArrowUp' || key === 'k') {
+      event.preventDefault();
+      setFocusedTopFileRow(selectedTopFileIndex - 1);
+      return;
+    }
+    if (key === 'Enter') {
+      event.preventDefault();
+      const row = topFileRows[selectedTopFileIndex];
+      if (row) {
+        openIssueDrawer(row.dataset.file || 'Issue preview', rowIssueHtml(row));
+      }
+    }
+    return;
+  }
+
+  const activeTag = document.activeElement && document.activeElement.tagName
+    ? document.activeElement.tagName.toLowerCase()
+    : '';
+  if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') {
+    return;
+  }
+  event.preventDefault();
+  searchInput.focus();
+});
+
+initSortableTables();
+refreshTopFileRows();
+initHeatmapAndDebt();
+animateMixBars();
+initTheme();
 applyFilters();
 </script>
 </body>

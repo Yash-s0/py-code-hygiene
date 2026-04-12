@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import platform
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -45,10 +46,36 @@ def scan_project(
     duplicate_findings = _duplicate_groups_to_findings(duplicates.get("groups", []))
     complexity_findings = list(complexity.get("hotspots", []))
     all_findings = list(dead_code.get("findings", [])) + duplicate_findings + complexity_findings
+    source_lines_by_file = {
+        str(module_info.file_path): module_info.source.splitlines()
+        for module_info in index.modules.values()
+    }
+
+    file_rows = [
+        {
+            "file": stat.file,
+            "total_lines": stat.total_lines,
+            "code_lines": stat.code_lines,
+            "comment_lines": stat.comment_lines,
+            "blank_lines": stat.blank_lines,
+            "function_count": stat.function_count,
+            "class_count": stat.class_count,
+        }
+        for stat in sorted(index.file_stats.values(), key=lambda item: item.file)
+    ]
 
     dead_total = int(dead_code.get("summary", {}).get("total", 0))
     duplicate_total = len(duplicate_findings)
     complexity_total = len(complexity_findings)
+    total_code_lines = sum(int(row.get("code_lines", 0)) for row in file_rows)
+    finding_density = round((len(all_findings) * 1000.0) / total_code_lines, 2) if total_code_lines else 0.0
+    confidence_breakdown = _confidence_breakdown(all_findings)
+    priority_rows = _priority_rows(
+        dead_findings=list(dead_code.get("findings", [])),
+        duplicate_groups=list(duplicates.get("groups", [])),
+        complexity_findings=complexity_findings,
+        source_lines_by_file=source_lines_by_file,
+    )
 
     score = _health_score(dead_code, duplicates, complexity)
 
@@ -63,27 +90,20 @@ def scan_project(
         "config": config_to_dict(config),
         "summary": {
             "files_analyzed": len(index.file_stats),
+            "code_lines": total_code_lines,
             "parse_errors": len(index.parse_errors),
             "total_findings": len(all_findings),
+            "finding_density_per_kloc": finding_density,
             "health_score": score,
             "by_analyzer": {
                 "dead_code": dead_total,
                 "duplicates": duplicate_total,
                 "complexity": complexity_total,
             },
+            "by_confidence": confidence_breakdown,
+            "top_files": priority_rows[:20],
         },
-        "files": [
-            {
-                "file": stat.file,
-                "total_lines": stat.total_lines,
-                "code_lines": stat.code_lines,
-                "comment_lines": stat.comment_lines,
-                "blank_lines": stat.blank_lines,
-                "function_count": stat.function_count,
-                "class_count": stat.class_count,
-            }
-            for stat in sorted(index.file_stats.values(), key=lambda item: item.file)
-        ],
+        "files": file_rows,
         "parse_errors": index.parse_errors,
         "dead_code": dead_code,
         "duplicates": duplicates,
@@ -156,3 +176,191 @@ def _health_score(
     if weighted <= 60:
         return 55
     return max(10, 100 - weighted)
+
+
+def _confidence_breakdown(findings: List[Dict[str, object]]) -> Dict[str, int]:
+    counts = {"high": 0, "medium": 0, "low": 0}
+    for finding in findings:
+        confidence = str(finding.get("confidence", "low"))
+        if confidence in counts:
+            counts[confidence] += 1
+    return counts
+
+
+def _priority_rows(
+    *,
+    dead_findings: List[Dict[str, object]],
+    duplicate_groups: List[Dict[str, object]],
+    complexity_findings: List[Dict[str, object]],
+    source_lines_by_file: Dict[str, List[str]],
+) -> List[Dict[str, object]]:
+    rows: Dict[str, Dict[str, object]] = defaultdict(
+        lambda: {
+            "file": "",
+            "total_findings": 0,
+            "dead_code": 0,
+            "duplicates": 0,
+            "duplicate_instances": 0,
+            "complexity": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "first_line": 0,
+            "first_kind": "",
+            "issues": [],
+            "priority_score": 0.0,
+        }
+    )
+
+    for finding in dead_findings:
+        file_path = str(finding.get("file", ""))
+        if not file_path:
+            continue
+        row = rows[file_path]
+        row["file"] = file_path
+        row["dead_code"] = int(row["dead_code"]) + 1
+        row["total_findings"] = int(row["total_findings"]) + 1
+        line = int(finding.get("line_start", 0))
+        _update_first_location(row, line, "dead_code")
+        _append_issue(
+            row,
+            {
+                "analyzer": "dead_code",
+                "category": str(finding.get("category", "unused")),
+                "line": line,
+                "confidence": str(finding.get("confidence", "low")),
+                "symbol": str(finding.get("symbol", "")),
+                "message": str(finding.get("message", "")),
+                "code": _line_excerpt(source_lines_by_file, file_path, line),
+            },
+        )
+        _inc_confidence(row, str(finding.get("confidence", "low")))
+
+    for finding in complexity_findings:
+        file_path = str(finding.get("file", ""))
+        if not file_path:
+            continue
+        row = rows[file_path]
+        row["file"] = file_path
+        row["complexity"] = int(row["complexity"]) + 1
+        row["total_findings"] = int(row["total_findings"]) + 1
+        line = int(finding.get("line_start", 0))
+        _update_first_location(row, line, "complexity")
+        _append_issue(
+            row,
+            {
+                "analyzer": "complexity",
+                "category": str(finding.get("category", "complexity-hotspot")),
+                "line": line,
+                "confidence": str(finding.get("confidence", "medium")),
+                "symbol": str(finding.get("symbol", "")),
+                "message": str(finding.get("message", "")),
+                "code": _line_excerpt(source_lines_by_file, file_path, line),
+            },
+        )
+        _inc_confidence(row, str(finding.get("confidence", "low")))
+
+    for group in duplicate_groups:
+        confidence = str(group.get("confidence", "medium"))
+        seen_files: set[str] = set()
+        for item in group.get("items", []):
+            if not isinstance(item, dict):
+                continue
+            file_path = str(item.get("file", ""))
+            if not file_path:
+                continue
+            row = rows[file_path]
+            row["file"] = file_path
+            row["duplicate_instances"] = int(row["duplicate_instances"]) + 1
+            line = int(item.get("line_start", 0))
+            _update_first_location(row, line, "duplicates")
+            _append_issue(
+                row,
+                {
+                    "analyzer": "duplicates",
+                    "category": f"duplicate-{group.get('kind', 'near')}",
+                    "line": line,
+                    "confidence": confidence,
+                    "symbol": str(item.get("name", "")),
+                    "message": str(group.get("reason", "Duplicate pattern detected")),
+                    "code": _short_snippet(str(item.get("snippet", ""))),
+                },
+            )
+            if file_path in seen_files:
+                continue
+            seen_files.add(file_path)
+            row["duplicates"] = int(row["duplicates"]) + 1
+            row["total_findings"] = int(row["total_findings"]) + 1
+            _inc_confidence(row, confidence)
+
+    output: List[Dict[str, object]] = []
+    for row in rows.values():
+        high = int(row["high"])
+        medium = int(row["medium"])
+        low = int(row["low"])
+        duplicates = int(row["duplicates"])
+        complexity = int(row["complexity"])
+        issues = list(row.get("issues", []))
+        issues.sort(
+            key=lambda issue: (
+                int(issue.get("line", 0)),
+                str(issue.get("analyzer", "")),
+                str(issue.get("category", "")),
+            )
+        )
+        row["issues_total"] = len(issues)
+        row["issues"] = issues[:25]
+        row["priority_score"] = round((high * 3.0) + (medium * 2.0) + low + (duplicates * 1.5) + complexity, 2)
+        output.append(row)
+
+    output.sort(
+        key=lambda row: (
+            float(row.get("priority_score", 0.0)),
+            int(row.get("total_findings", 0)),
+            int(row.get("high", 0)),
+        ),
+        reverse=True,
+    )
+    return output
+
+
+def _inc_confidence(row: Dict[str, object], confidence: str) -> None:
+    if confidence in {"high", "medium", "low"}:
+        row[confidence] = int(row[confidence]) + 1
+
+
+def _append_issue(row: Dict[str, object], issue: Dict[str, object]) -> None:
+    issues = row.get("issues")
+    if isinstance(issues, list):
+        issues.append(issue)
+
+
+def _update_first_location(row: Dict[str, object], line: int, kind: str) -> None:
+    if line <= 0:
+        return
+    current = int(row.get("first_line", 0))
+    if current == 0 or line < current:
+        row["first_line"] = line
+        row["first_kind"] = kind
+
+
+def _line_excerpt(source_lines_by_file: Dict[str, List[str]], file_path: str, line: int) -> str:
+    if line <= 0:
+        return ""
+    lines = source_lines_by_file.get(file_path)
+    if not lines:
+        return ""
+    index = line - 1
+    if index < 0 or index >= len(lines):
+        return ""
+    return lines[index].strip()
+
+
+def _short_snippet(snippet: str) -> str:
+    if not snippet:
+        return ""
+    lines = [line.rstrip() for line in snippet.splitlines() if line.strip()]
+    compact = " ".join(lines[:3]).strip()
+    if len(compact) > 240:
+        return compact[:237].rstrip() + "..."
+    return compact
