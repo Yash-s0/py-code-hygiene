@@ -303,17 +303,18 @@ def _priority_rows(
 
     for group in duplicate_groups:
         confidence = str(group.get("confidence", "medium"))
+        group_items = [item for item in group.get("items", []) if isinstance(item, dict)]
         seen_files: set[str] = set()
-        for item in group.get("items", []):
-            if not isinstance(item, dict):
-                continue
+        for item in group_items:
             file_path = str(item.get("file", ""))
             if not file_path:
                 continue
+            line = int(item.get("line_start", 0))
+            line_end = int(item.get("line_end", 0))
+            peers = _duplicate_peers(group_items, item)
             row = rows[file_path]
             row["file"] = file_path
             row["duplicate_instances"] = int(row["duplicate_instances"]) + 1
-            line = int(item.get("line_start", 0))
             _update_first_location(row, line, "duplicates")
             _append_issue(
                 row,
@@ -321,10 +322,17 @@ def _priority_rows(
                     "analyzer": "duplicates",
                     "category": f"duplicate-{group.get('kind', 'near')}",
                     "line": line,
+                    "line_end": line_end,
                     "confidence": confidence,
                     "symbol": str(item.get("name", "")),
                     "message": str(group.get("reason", "Duplicate pattern detected")),
                     "code": _short_snippet(str(item.get("snippet", ""))),
+                    "normalized_code": _short_snippet(str(item.get("normalized_snippet", ""))),
+                    "similarity": float(group.get("similarity", 0.0)),
+                    "group_id": str(group.get("id", "")),
+                    "group_kind": str(group.get("kind", "near")),
+                    "group_count": len(group_items),
+                    "related": peers,
                 },
             )
             if file_path in seen_files:
@@ -405,3 +413,26 @@ def _short_snippet(snippet: str) -> str:
     if len(compact) > 240:
         return compact[:237].rstrip() + "..."
     return compact
+
+
+def _duplicate_peers(group_items: List[Dict[str, object]], current_item: Dict[str, object]) -> List[Dict[str, object]]:
+    current_file = str(current_item.get("file", ""))
+    current_line = int(current_item.get("line_start", 0))
+    current_name = str(current_item.get("name", ""))
+    peers: List[Dict[str, object]] = []
+    for peer in group_items:
+        peer_file = str(peer.get("file", ""))
+        peer_line = int(peer.get("line_start", 0))
+        peer_name = str(peer.get("name", ""))
+        if peer_file == current_file and peer_line == current_line and peer_name == current_name:
+            continue
+        peers.append(
+            {
+                "file": peer_file,
+                "line_start": peer_line,
+                "line_end": int(peer.get("line_end", 0)),
+                "symbol": str(peer.get("name", "")),
+            }
+        )
+    peers.sort(key=lambda item: (str(item.get("file", "")), int(item.get("line_start", 0))))
+    return peers

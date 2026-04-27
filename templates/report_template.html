@@ -820,7 +820,28 @@ body[data-theme="light"] .action-btn.secondary:hover {
                       <span class="issue-meta">{{ row.file }}:{{ issue.line }} | {{ issue.category }}</span>
                     </div>
                     <div class="small">{{ issue.message }}{% if issue.symbol %} | {{ issue.symbol }}{% endif %}</div>
+                    {% if issue.analyzer == 'duplicates' %}
+                    <div class="small">
+                      Duplicate span: lines {{ issue.line }}{% if issue.line_end and issue.line_end > issue.line %}-{{ issue.line_end }}{% endif %}
+                      | Group: {{ issue.group_kind }} ({{ issue.group_count }} items)
+                      | Similarity: {{ issue.similarity }}
+                    </div>
+                    {% if issue.related %}
+                    <div class="small" style="margin-top:4px;">
+                      Matches with:
+                      {% for peer in issue.related %}
+                        {{ peer.file }}:{{ peer.line_start }}{% if peer.line_end and peer.line_end > peer.line_start %}-{{ peer.line_end }}{% endif %}{% if peer.symbol %} ({{ peer.symbol }}){% endif %}{% if not loop.last %}; {% endif %}
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endif %}
                     {% if issue.code %}<pre class="issue-code">{{ issue.code }}</pre>{% endif %}
+                    {% if issue.analyzer == 'duplicates' and issue.normalized_code %}
+                    <details class="dup-snippet">
+                      <summary>Show normalized match basis</summary>
+                      <pre class="issue-code">{{ issue.normalized_code }}</pre>
+                    </details>
+                    {% endif %}
                     {% if issue.code %}
                     <div class="issue-inline-preview">
                       <div class="small">Hover preview around line {{ issue.line }}</div>
@@ -942,6 +963,16 @@ body[data-theme="light"] .action-btn.secondary:hover {
         {% for item in group['items'] %}
         <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
           <strong>{{ item.file }}:{{ item.line_start }}</strong> - {{ item.qualname }}
+          <div class="small" style="margin-top:4px;">
+            Lines {{ item.line_start }}{% if item.line_end and item.line_end > item.line_start %}-{{ item.line_end }}{% endif %}
+            {% if group.count > 1 %}| Matches with {{ group.count - 1 }} other item{% if group.count - 1 > 1 %}s{% endif %}{% endif %}
+          </div>
+          <div class="small" style="margin-top:4px;">Peer locations:</div>
+          {% for peer in group['items'] %}
+            {% if not (peer.file == item.file and peer.line_start == item.line_start and peer.name == item.name) %}
+            <div class="small">{{ peer.file }}:{{ peer.line_start }}{% if peer.line_end and peer.line_end > peer.line_start %}-{{ peer.line_end }}{% endif %} ({{ peer.qualname }})</div>
+            {% endif %}
+          {% endfor %}
           <span class="row-actions" style="margin-left:8px;">
             <button class="action-btn open-file-btn" type="button" data-file="{{ item.file }}" data-line="{{ item.line_start }}">Open</button>
             <button class="action-btn secondary copy-loc-btn" type="button" data-file="{{ item.file }}" data-line="{{ item.line_start }}">Copy</button>
@@ -950,6 +981,12 @@ body[data-theme="light"] .action-btn.secondary:hover {
             <summary>Show snippet</summary>
             <pre>{{ item.snippet }}</pre>
           </details>
+          {% if item.normalized_snippet %}
+          <details class="dup-snippet">
+            <summary>Show normalized match basis</summary>
+            <pre>{{ item.normalized_snippet }}</pre>
+          </details>
+          {% endif %}
         </div>
         {% endfor %}
       </article>

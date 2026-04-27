@@ -20,6 +20,8 @@ class PreparedBlock:
     tokens: List[str]
     shingles: Set[str]
     signature: List[int]
+    call_targets: Set[str]
+    body_statement_count: int
 
 
 def analyze_duplicates(index: RepoIndex, config: Config) -> Dict[str, object]:
@@ -47,6 +49,7 @@ def analyze_duplicates(index: RepoIndex, config: Config) -> Dict[str, object]:
 
         signature = _minhash_signature(shingles, config.duplicate_minhash_permutations)
         exact_fingerprint = hashlib.sha1(canonical.encode("utf-8")).hexdigest()
+        call_targets, body_statement_count = _extract_function_semantics(block.source)
 
         prepared.append(
             PreparedBlock(
@@ -56,6 +59,8 @@ def analyze_duplicates(index: RepoIndex, config: Config) -> Dict[str, object]:
                 tokens=tokens,
                 shingles=shingles,
                 signature=signature,
+                call_targets=call_targets,
+                body_statement_count=body_statement_count,
             )
         )
 
@@ -84,20 +89,23 @@ def _build_exact_groups(prepared: List[PreparedBlock]) -> List[Dict[str, object]
 
     groups: List[Dict[str, object]] = []
     for fingerprint, items in grouped.items():
-        if len(items) < 2:
-            continue
-
-        groups.append(
-            {
-                "id": f"exact-{fingerprint[:12]}",
-                "kind": "exact",
-                "confidence": "high",
-                "similarity": 1.0,
-                "reason": "Exact match after AST normalization",
-                "count": len(items),
-                "items": [_item_to_dict(item.block) for item in sorted(items, key=lambda it: (it.block.file, it.block.line_start))],
-            }
-        )
+        for component in _split_exact_components(items):
+            if len(component) < 2:
+                continue
+            groups.append(
+                {
+                    "id": f"exact-{fingerprint[:12]}",
+                    "kind": "exact",
+                    "confidence": "high",
+                    "similarity": 1.0,
+                    "reason": "Exact match after AST normalization",
+                    "count": len(component),
+                    "items": [
+                        _item_to_dict(item.block, canonical=item.canonical)
+                        for item in sorted(component, key=lambda it: (it.block.file, it.block.line_start))
+                    ],
+                }
+            )
 
     groups.sort(key=lambda item: item["count"], reverse=True)
     return groups
@@ -137,6 +145,8 @@ def _build_near_groups(
     for left, right in candidate_pairs:
         sim = _jaccard(candidates[left].shingles, candidates[right].shingles)
         if sim < config.duplicate_similarity_threshold:
+            continue
+        if not _near_duplicate_semantic_guard(candidates[left], candidates[right]):
             continue
         adjacency[left].add(right)
         adjacency[right].add(left)
@@ -191,7 +201,7 @@ def _build_near_groups(
                 "reason": "Near-duplicate detected via MinHash/LSH with Jaccard verification",
                 "count": len(component),
                 "items": [
-                    _item_to_dict(candidates[idx].block)
+                    _item_to_dict(candidates[idx].block, canonical=candidates[idx].canonical)
                     for idx in sorted(component, key=lambda idx: (candidates[idx].block.file, candidates[idx].block.line_start))
                 ],
             }
@@ -320,6 +330,54 @@ def _bands(signature: List[int], bands: int) -> Iterable[Tuple[int, Tuple[int, .
         yield band_index, tuple(signature[start:end])
 
 
+def _split_exact_components(items: List[PreparedBlock]) -> List[List[PreparedBlock]]:
+    if len(items) < 2:
+        return []
+
+    adjacency: Dict[int, Set[int]] = defaultdict(set)
+    for left, right in itertools.combinations(range(len(items)), 2):
+        if _near_duplicate_semantic_guard(items[left], items[right]):
+            adjacency[left].add(right)
+            adjacency[right].add(left)
+
+    visited: Set[int] = set()
+    components: List[List[PreparedBlock]] = []
+    for start in range(len(items)):
+        if start in visited:
+            continue
+        queue = [start]
+        visited.add(start)
+        component: List[PreparedBlock] = []
+        while queue:
+            current = queue.pop()
+            component.append(items[current])
+            for neighbor in adjacency[current]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+        components.append(component)
+    return components
+
+
+def _near_duplicate_semantic_guard(left: PreparedBlock, right: PreparedBlock) -> bool:
+    left_short = _is_short_function(left)
+    right_short = _is_short_function(right)
+    if not (left_short and right_short):
+        return True
+
+    # For short wrapper-like functions, require either same function name
+    # or overlap in called targets to avoid false positives from generic endpoint scaffolding.
+    if not (left.call_targets or right.call_targets):
+        return True
+    if left.block.name == right.block.name:
+        return True
+    return bool(left.call_targets & right.call_targets)
+
+
+def _is_short_function(item: PreparedBlock) -> bool:
+    return item.block.lines <= 10 or item.body_statement_count <= 3
+
+
 def _jaccard(left: Set[str], right: Set[str]) -> float:
     if not left or not right:
         return 0.0
@@ -330,7 +388,7 @@ def _jaccard(left: Set[str], right: Set[str]) -> float:
     return inter / union
 
 
-def _item_to_dict(block: CodeBlock) -> Dict[str, object]:
+def _item_to_dict(block: CodeBlock, *, canonical: str = "") -> Dict[str, object]:
     return {
         "file": block.file,
         "name": block.name,
@@ -339,8 +397,53 @@ def _item_to_dict(block: CodeBlock) -> Dict[str, object]:
         "line_end": block.line_end,
         "lines": block.lines,
         "snippet": "\n".join(block.source.splitlines()[:14]),
+        "normalized_snippet": "\n".join(canonical.splitlines()[:14]) if canonical else "",
     }
 
 
 def _block_key(file_path: str, line_start: int, name: str) -> str:
     return f"{file_path}:{line_start}:{name}"
+
+
+def _extract_function_semantics(source: str) -> Tuple[Set[str], int]:
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set(), 0
+    if not tree.body:
+        return set(), 0
+
+    head = tree.body[0]
+    if not isinstance(head, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        return set(), 0
+
+    body_nodes = list(head.body)
+    if body_nodes and isinstance(body_nodes[0], ast.Expr) and isinstance(getattr(body_nodes[0], "value", None), ast.Constant):
+        if isinstance(getattr(body_nodes[0].value, "value", None), str):
+            body_nodes = body_nodes[1:]
+
+    call_targets: Set[str] = set()
+    for node in body_nodes:
+        for child in ast.walk(node):
+            if isinstance(child, ast.Call):
+                target = _call_target(child.func)
+                if target:
+                    call_targets.add(target)
+
+    return call_targets, len(body_nodes)
+
+
+def _call_target(node: ast.AST) -> str:
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        parts: List[str] = [node.attr]
+        current = node.value
+        while isinstance(current, ast.Attribute):
+            parts.append(current.attr)
+            current = current.value
+        if isinstance(current, ast.Name):
+            parts.append(current.id)
+        parts.reverse()
+        return ".".join(parts)
+    return ""
