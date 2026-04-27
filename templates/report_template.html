@@ -430,6 +430,27 @@ th {
   font-size: 12px;
   color: var(--text-muted);
 }
+.ai-banner {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--surface-elev);
+  padding: 10px 12px;
+}
+.ai-banner.disabled {
+  border-left-color: var(--sev-medium);
+}
+.ai-guidance {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+.ai-guidance .small {
+  margin-top: 4px;
+}
 .dup-snippet {
   margin-top: 6px;
 }
@@ -484,6 +505,12 @@ body[data-theme="light"] .action-btn.secondary:hover {
 .table-hint {
   margin-top: 8px;
   margin-bottom: 10px;
+}
+.table-toggle-wrap {
+  margin-top: 10px;
+}
+.hidden-by-default {
+  display: none;
 }
 .file-cell {
   display: flex;
@@ -661,12 +688,25 @@ body[data-theme="light"] .action-btn.secondary:hover {
 <body data-theme="dark">
 <div class="container">
   <section class="header">
+    {% set ai = report.ai if report.ai is defined else {'enabled': false, 'provider': 'none', 'reason': 'No AI status available', 'enriched_count': 0} %}
     <h1 class="title">Py Code Hygiene Report</h1>
     <div class="subtitle">
       <strong>Target:</strong> {{ report.meta.target }}<br>
       <strong>Generated:</strong> {{ report.meta.generated_at }}<br>
       <strong>Python:</strong> {{ report.meta.python }}<br>
       <strong>Snapshot:</strong> Re-run `py-code-hygiene scan` after code changes to refresh findings.
+    </div>
+    <div class="ai-banner {% if not ai.enabled %}disabled{% endif %}">
+      <strong>AI Guidance:</strong>
+      {% if ai.enabled %}
+        Enabled ({{ ai.provider }}) | Enriched findings: {{ ai.enriched_count }}
+      {% else %}
+        Disabled
+      {% endif %}
+      <div class="small">{{ ai.reason }}</div>
+      {% if not ai.enabled %}
+      <div class="small">Add `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` to this tool repo's `.env` for better explanation and improvement guidance.</div>
+      {% endif %}
     </div>
     <div class="health">
       Health {{ report.summary.health_score }}%
@@ -805,13 +845,13 @@ body[data-theme="light"] .action-btn.secondary:hover {
     <h3>Top Files By Code Lines</h3>
     {% set top_code_files = report.files|sort(attribute='code_lines', reverse=True) %}
     <div class="table-wrap">
-      <table class="sortable">
+      <table class="sortable" id="topCodeLinesTable">
         <thead>
           <tr><th data-sort="text">File</th><th data-sort="number">Code</th><th data-sort="number">Comments</th><th data-sort="number">Functions</th><th data-sort="number">Classes</th></tr>
         </thead>
         <tbody>
           {% for file in top_code_files[:20] %}
-          <tr>
+          <tr class="{% if loop.index > 6 %}hidden-by-default code-lines-extra{% endif %}">
             <td>{{ file.file }}</td>
             <td>{{ file.code_lines }}</td>
             <td>{{ file.comment_lines }}</td>
@@ -822,6 +862,11 @@ body[data-theme="light"] .action-btn.secondary:hover {
         </tbody>
       </table>
     </div>
+    {% if top_code_files|length > 6 %}
+    <div class="table-toggle-wrap">
+      <button id="toggleCodeLinesRows" class="action-btn secondary" type="button" data-expanded="false">Show more</button>
+    </div>
+    {% endif %}
 
     <h3 style="margin-top:16px;">Parse Errors</h3>
     {% if report.parse_errors %}
@@ -853,6 +898,13 @@ body[data-theme="light"] .action-btn.secondary:hover {
             <td>
               <div>{{ finding.message }}</div>
               {% if finding.evidence %}<div class="small">{{ finding.evidence|join('; ') }}</div>{% endif %}
+              {% if finding.ai_explanation or finding.ai_improvement %}
+              <div class="ai-guidance">
+                <strong>AI Guidance</strong>
+                {% if finding.ai_explanation %}<div class="small"><strong>What is wrong:</strong> {{ finding.ai_explanation }}</div>{% endif %}
+                {% if finding.ai_improvement %}<div class="small"><strong>How to improve:</strong> {{ finding.ai_improvement }}</div>{% endif %}
+              </div>
+              {% endif %}
             </td>
             <td>
               <span class="row-actions">
@@ -880,6 +932,13 @@ body[data-theme="light"] .action-btn.secondary:hover {
           <span class="small" style="margin-left:8px;">Similarity {{ group.similarity }}</span>
         </div>
         <div class="small" style="margin-top:6px;">{{ group.reason }}</div>
+        {% if group.ai_explanation or group.ai_improvement %}
+        <div class="ai-guidance">
+          <strong>AI Guidance</strong>
+          {% if group.ai_explanation %}<div class="small"><strong>What is wrong:</strong> {{ group.ai_explanation }}</div>{% endif %}
+          {% if group.ai_improvement %}<div class="small"><strong>How to improve:</strong> {{ group.ai_improvement }}</div>{% endif %}
+        </div>
+        {% endif %}
         {% for item in group['items'] %}
         <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
           <strong>{{ item.file }}:{{ item.line_start }}</strong> - {{ item.qualname }}
@@ -916,7 +975,16 @@ body[data-theme="light"] .action-btn.secondary:hover {
             <td>{{ hotspot.complexity }}</td>
             <td>{{ hotspot.qualname }}</td>
             <td data-sort-value="{{ hotspot.line_start }}">{{ hotspot.file }}:{{ hotspot.line_start }}</td>
-            <td>{{ hotspot.suggested_action }}</td>
+            <td>
+              <div>{{ hotspot.suggested_action }}</div>
+              {% if hotspot.ai_explanation or hotspot.ai_improvement %}
+              <div class="ai-guidance">
+                <strong>AI Guidance</strong>
+                {% if hotspot.ai_explanation %}<div class="small"><strong>What is wrong:</strong> {{ hotspot.ai_explanation }}</div>{% endif %}
+                {% if hotspot.ai_improvement %}<div class="small"><strong>How to improve:</strong> {{ hotspot.ai_improvement }}</div>{% endif %}
+              </div>
+              {% endif %}
+            </td>
             <td>
               <span class="row-actions">
                 <button class="action-btn open-file-btn" type="button" data-file="{{ hotspot.file }}" data-line="{{ hotspot.line_start }}">Open</button>
@@ -992,6 +1060,7 @@ const issueDrawerTitle = document.getElementById('issueDrawerTitle');
 const issueDrawerClose = document.getElementById('issueDrawerClose');
 const themeToggle = document.getElementById('themeToggle');
 const mixFills = Array.from(document.querySelectorAll('.mix-fill'));
+const toggleCodeLinesRowsBtn = document.getElementById('toggleCodeLinesRows');
 let topFileRows = [];
 let selectedTopFileIndex = 0;
 let drawerRenderTimer = null;
@@ -1066,6 +1135,22 @@ clearFilters.addEventListener('click', () => {
   }
   applyFilters();
 });
+
+if (toggleCodeLinesRowsBtn) {
+  toggleCodeLinesRowsBtn.addEventListener('click', () => {
+    const expanded = toggleCodeLinesRowsBtn.getAttribute('data-expanded') === 'true';
+    const extraRows = document.querySelectorAll('.code-lines-extra');
+    for (const row of extraRows) {
+      if (expanded) {
+        row.classList.add('hidden-by-default');
+      } else {
+        row.classList.remove('hidden-by-default');
+      }
+    }
+    toggleCodeLinesRowsBtn.setAttribute('data-expanded', expanded ? 'false' : 'true');
+    toggleCodeLinesRowsBtn.textContent = expanded ? 'Show more' : 'Show less';
+  });
+}
 
 const downloadJson = document.getElementById('downloadJson');
 downloadJson.addEventListener('click', () => {

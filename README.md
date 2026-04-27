@@ -41,6 +41,17 @@ What happens:
 - writes reports in `reports/`
 - prints summary stats in terminal
 
+### Optional AI Guidance
+If this tool repository contains a `.env` file, scanner auto-checks:
+- `OPENAI_API_KEY` (preferred)
+- `ANTHROPIC_API_KEY` (fallback)
+
+When a key is found, findings get AI guidance:
+- what is wrong
+- how to improve
+
+If no key is present, scan continues normally and prints a "working without AI" note in terminal and report UI.
+
 ## Command Help
 ```bash
 py-code-hygiene --help
@@ -230,7 +241,7 @@ duplicate_shingle_size = 5
 duplicate_minhash_permutations = 48
 duplicate_lsh_bands = 12
 
-complexity_threshold = 10
+complexity_threshold = 25
 top_complexity_limit = 30
 ```
 

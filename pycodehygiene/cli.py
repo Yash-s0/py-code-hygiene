@@ -129,6 +129,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     analyzer_counts = summary.get("by_analyzer", {}) if isinstance(summary, dict) else {}
     dead_summary = report.get("dead_code", {}).get("summary", {}) if isinstance(report.get("dead_code"), dict) else {}
     dead_suppressed = dead_summary.get("suppressed", 0) if isinstance(dead_summary, dict) else 0
+    ai_meta = report.get("ai", {}) if isinstance(report.get("ai"), dict) else {}
+    ai_enabled = bool(ai_meta.get("enabled", False))
+    ai_provider = str(ai_meta.get("provider", "none"))
+    ai_enriched_count = int(ai_meta.get("enriched_count", 0) or 0)
+    ai_reason = str(ai_meta.get("reason", ""))
     print(f"[+] Target: {target}")
     print(f"[+] Files analyzed: {summary.get('files_analyzed', 0)}")
     print(f"[+] Findings: {summary.get('total_findings', 0)}")
@@ -140,6 +145,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         )
     )
     print(f"    dead_code_suppressed={dead_suppressed} (use --min-confidence low to include low-confidence findings)")
+    if ai_enabled:
+        print(f"    ai_provider={ai_provider} ai_enriched={ai_enriched_count}")
+    else:
+        print("    ai_provider=none (working without AI; add key in this repo .env for better suggestions)")
+    if ai_reason:
+        print(f"    ai_note={ai_reason}")
     if json_path is not None:
         print(f"[+] JSON report: {json_path}")
     if html_path is not None:

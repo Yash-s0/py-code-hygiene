@@ -18,7 +18,7 @@ duplicate_shingle_size = 5
 duplicate_minhash_permutations = 48
 duplicate_lsh_bands = 12
 
-complexity_threshold = 10
+complexity_threshold = 25
 top_complexity_limit = 30
 
 report_title = "Py Code Hygiene Report"

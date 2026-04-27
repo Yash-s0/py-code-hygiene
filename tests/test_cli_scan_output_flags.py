@@ -86,6 +86,7 @@ class CliScanOutputFlagTests(unittest.TestCase):
             self.assertFalse(html_path.exists())
             self.assertFalse(json_path.exists())
             self.assertIn("Output reports skipped (--no-json and --no-html)", stdout.getvalue())
+            self.assertIn("working without AI", stdout.getvalue())
             self.assertNotIn("HTML report:", stdout.getvalue())
             self.assertNotIn("JSON report:", stdout.getvalue())
 

@@ -32,11 +32,25 @@ class ReportGenerator:
 def _render_fallback_html(context: Dict[str, object]) -> str:
     summary = context.get("summary", {}) if isinstance(context.get("summary"), dict) else {}
     findings = context.get("findings", []) if isinstance(context.get("findings"), list) else []
+    ai = context.get("ai", {}) if isinstance(context.get("ai"), dict) else {}
+    ai_reason = str(ai.get("reason", ""))
+    ai_provider = str(ai.get("provider", "none"))
+    ai_enabled = bool(ai.get("enabled", False))
 
     rows = []
     for item in findings[:200]:
         if not isinstance(item, dict):
             continue
+        ai_guidance = ""
+        ai_explanation = str(item.get("ai_explanation", "")).strip()
+        ai_improvement = str(item.get("ai_improvement", "")).strip()
+        if ai_explanation or ai_improvement:
+            ai_guidance = "<br><small><strong>AI:</strong> "
+            if ai_explanation:
+                ai_guidance += f"Wrong: {html.escape(ai_explanation)} "
+            if ai_improvement:
+                ai_guidance += f"Improve: {html.escape(ai_improvement)}"
+            ai_guidance += "</small>"
         rows.append(
             "<tr>"
             f"<td>{html.escape(str(item.get('analyzer', '-')))}</td>"
@@ -44,7 +58,7 @@ def _render_fallback_html(context: Dict[str, object]) -> str:
             f"<td>{html.escape(str(item.get('category', '-')))}</td>"
             f"<td>{html.escape(str(item.get('file', '-')))}:{html.escape(str(item.get('line_start', '-')))}</td>"
             f"<td>{html.escape(str(item.get('symbol', '-')))}</td>"
-            f"<td>{html.escape(str(item.get('message', '-')))}</td>"
+            f"<td>{html.escape(str(item.get('message', '-')))}{ai_guidance}</td>"
             "</tr>"
         )
 
@@ -68,6 +82,10 @@ th {{ font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color:
     <strong>Files:</strong> {summary.get('files_analyzed', 0)}<br>
     <strong>Total findings:</strong> {summary.get('total_findings', 0)}<br>
     <strong>Health:</strong> {summary.get('health_score', 0)}%
+  </div>
+  <div class=\"card\">
+    <strong>AI:</strong> {"Enabled" if ai_enabled else "Disabled"} ({html.escape(ai_provider)})<br>
+    <strong>Note:</strong> {html.escape(ai_reason) if ai_reason else "No AI status available"}
   </div>
   <div class=\"card\">
     <h2>Dead Code Findings</h2>

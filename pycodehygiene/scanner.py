@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from pycodehygiene.ai_enrichment import enrich_findings
 from pycodehygiene.analyzer import analyze_dead_code
 from pycodehygiene.complexity import analyze_complexity
 from pycodehygiene.config import Config, apply_cli_overrides, config_to_dict, load_config
@@ -48,6 +49,8 @@ def scan_project(
     duplicate_findings = _duplicate_groups_to_findings(duplicates.get("groups", []))
     complexity_findings = list(complexity.get("hotspots", []))
     all_findings = list(dead_code.get("findings", [])) + duplicate_findings + complexity_findings
+    ai_meta = enrich_findings(all_findings)
+    _apply_duplicate_ai_to_groups(duplicates, duplicate_findings)
     source_lines_by_file = {
         str(module_info.file_path): module_info.source.splitlines()
         for module_info in index.modules.values()
@@ -110,6 +113,7 @@ def scan_project(
         "dead_code": dead_code,
         "duplicates": duplicates,
         "complexity": complexity,
+        "ai": ai_meta,
         "findings": all_findings,
     }
 
@@ -149,6 +153,41 @@ def _duplicate_groups_to_findings(groups: List[Dict[str, object]]) -> List[Dict[
             }
         )
     return findings
+
+
+def _apply_duplicate_ai_to_groups(
+    duplicates: Dict[str, object],
+    duplicate_findings: List[Dict[str, object]],
+) -> None:
+    groups = duplicates.get("groups", [])
+    if not isinstance(groups, list):
+        return
+
+    ai_by_id: Dict[str, Dict[str, str]] = {}
+    for finding in duplicate_findings:
+        finding_id = str(finding.get("id", ""))
+        if not finding_id:
+            continue
+        explanation = str(finding.get("ai_explanation", "")).strip()
+        improvement = str(finding.get("ai_improvement", "")).strip()
+        if not explanation and not improvement:
+            continue
+        ai_by_id[finding_id] = {
+            "explanation": explanation,
+            "improvement": improvement,
+        }
+
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        group_id = str(group.get("id", ""))
+        group_ai = ai_by_id.get(group_id)
+        if not group_ai:
+            continue
+        if group_ai.get("explanation"):
+            group["ai_explanation"] = group_ai["explanation"]
+        if group_ai.get("improvement"):
+            group["ai_improvement"] = group_ai["improvement"]
 
 
 def _health_score(

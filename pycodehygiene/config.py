@@ -120,7 +120,7 @@ class Config:
     duplicate_minhash_permutations: int = 48
     duplicate_lsh_bands: int = 12
 
-    complexity_threshold: int = 10
+    complexity_threshold: int = 25
     top_complexity_limit: int = 30
 
     report_title: str = "Py Code Hygiene Report"
