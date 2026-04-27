@@ -48,19 +48,18 @@ class UnusedImportsRule(BaseRule):
                 continue
 
             contexts = ctx.usage.import_contexts.get(binding.symbol_id, set())
+            # Typing-only imports are intentional and should not be reported as dead code,
+            # even when users opt in to low-confidence reporting.
+            if contexts and contexts <= {"annotation", "type_checking"}:
+                continue
+            if binding.in_type_checking:
+                continue
+
             evidence: List[str] = []
             reasons = set(binding.reasons)
 
             if contexts:
-                if contexts <= {"annotation", "type_checking"}:
-                    evidence.append("Import only used in type checking/annotations")
-                    reasons.add("type_only")
-                else:
-                    evidence.append("Import referenced in non-runtime context")
-
-            if binding.in_type_checking:
-                evidence.append("Import defined inside TYPE_CHECKING block")
-                reasons.add("type_only")
+                evidence.append("Import referenced in non-runtime context")
 
             if "exported_in_all" in reasons:
                 evidence.append("Import name re-exported via __all__")

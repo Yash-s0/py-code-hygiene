@@ -278,6 +278,8 @@ class ModuleReferenceCollector(ast.NodeVisitor):
 
     def visit_If(self, node: ast.If):
         if is_type_checking_test(node.test):
+            # The TYPE_CHECKING symbol itself is evaluated at runtime in the condition.
+            self.visit(node.test)
             self.type_checking_stack.append(True)
             for stmt in node.body:
                 self.visit(stmt)

@@ -19,3 +19,4 @@ git_activity_report.json
 build/
 dist/
 *.egg-info/
+.codex

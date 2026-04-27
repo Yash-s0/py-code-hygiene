@@ -95,6 +95,40 @@ class DeadCodeFalsePositiveTests(unittest.TestCase):
         ]
         self.assertEqual(findings, [])
 
+    def test_string_annotations_are_not_reported_even_with_low_confidence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "models.py").write_text(
+                textwrap.dedent(
+                    """
+                    class User:
+                        pass
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "service.py").write_text(
+                textwrap.dedent(
+                    """
+                    from __future__ import annotations
+                    from models import User
+
+                    def render(user: "User") -> "User":
+                        return user
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            low_report = scan_project(root, minimum_confidence_to_report="low")
+
+        findings = [
+            f
+            for f in low_report["dead_code"]["findings"]
+            if f["file"].endswith("service.py") and f["category"] == "unused-import"
+        ]
+        self.assertEqual(findings, [])
+
     def test_local_shadowing_does_not_mark_import_used(self):
         report = self._scan(
             {
@@ -115,6 +149,28 @@ class DeadCodeFalsePositiveTests(unittest.TestCase):
         ]
         self.assertTrue(import_findings)
         self.assertEqual(import_findings[0]["symbol"], "sqrt")
+
+    def test_type_checking_symbol_import_is_treated_as_used(self):
+        report = self._scan(
+            {
+                "types_only.py": """
+                from typing import TYPE_CHECKING
+
+                if TYPE_CHECKING:
+                    from decimal import Decimal
+
+                def read_amount(value: "Decimal | None"):
+                    return value
+                """
+            }
+        )
+
+        findings = [
+            f
+            for f in report["dead_code"]["findings"]
+            if f["file"].endswith("types_only.py") and f["category"] == "unused-import"
+        ]
+        self.assertEqual(findings, [])
 
     def test_reexported_top_level_import_is_not_high_confidence_unused(self):
         report = self._scan(

@@ -1321,7 +1321,22 @@ function initTheme() {
   }
 }
 
-function toVsCodeUri(filePath, line) {
+const KNOWN_IDE_SCHEMES = [
+  { label: 'Cursor', scheme: 'cursor' },
+  { label: 'VS Code', scheme: 'vscode' },
+  { label: 'VS Code Insiders', scheme: 'vscode-insiders' },
+  { label: 'VSCodium', scheme: 'vscodium' },
+];
+
+function normalizeScheme(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/:.*$/, '')
+    .replace(/[^a-z0-9+.-]/g, '');
+}
+
+function toEditorUri(filePath, line, scheme) {
   const normalized = String(filePath || '').replace(/\\/g, '/');
   const encodedPath = normalized
     .split('/')
@@ -1329,7 +1344,76 @@ function toVsCodeUri(filePath, line) {
     .join('/');
   const path = normalized.startsWith('/') ? encodedPath : `/${encodedPath}`;
   const ln = Number(line) > 0 ? Number(line) : 1;
-  return `vscode://file/${path}:${ln}:1`;
+  return `${scheme}://file/${path}:${ln}:1`;
+}
+
+function chooseIdeScheme() {
+  const saved = normalizeScheme(window.localStorage.getItem('pycodehygiene-ide-scheme') || '');
+  if (saved) {
+    return saved;
+  }
+
+  const options = KNOWN_IDE_SCHEMES
+    .map((ide, index) => `${index + 1}. ${ide.label} (${ide.scheme})`)
+    .join('\n');
+  const choice = window.prompt(
+    `Choose IDE to open this file:\n${options}\n5. Other (type URI scheme like zed/idea)\n\nEnter 1-5 or a scheme name:`,
+    '1'
+  );
+
+  if (choice === null) {
+    return '';
+  }
+
+  const trimmed = String(choice).trim();
+  if (!trimmed) {
+    const fallback = KNOWN_IDE_SCHEMES[0].scheme;
+    try {
+      window.localStorage.setItem('pycodehygiene-ide-scheme', fallback);
+    } catch (_error) {
+      // Ignore storage failures.
+    }
+    return fallback;
+  }
+
+  const numeric = Number.parseInt(trimmed, 10);
+  if (String(numeric) === trimmed) {
+    if (numeric >= 1 && numeric <= KNOWN_IDE_SCHEMES.length) {
+      const selected = KNOWN_IDE_SCHEMES[numeric - 1].scheme;
+      try {
+        window.localStorage.setItem('pycodehygiene-ide-scheme', selected);
+      } catch (_error) {
+        // Ignore storage failures.
+      }
+      return selected;
+    }
+    if (numeric === KNOWN_IDE_SCHEMES.length + 1) {
+      const custom = window.prompt('Enter IDE URI scheme (examples: zed, idea, cursor, vscode):', '');
+      if (custom === null) {
+        return '';
+      }
+      const selected = normalizeScheme(custom);
+      if (selected) {
+        try {
+          window.localStorage.setItem('pycodehygiene-ide-scheme', selected);
+        } catch (_error) {
+          // Ignore storage failures.
+        }
+      }
+      return selected;
+    }
+    return '';
+  }
+
+  const selected = normalizeScheme(trimmed);
+  if (selected) {
+    try {
+      window.localStorage.setItem('pycodehygiene-ide-scheme', selected);
+    } catch (_error) {
+      // Ignore storage failures.
+    }
+  }
+  return selected;
 }
 
 async function copyText(text) {
@@ -1343,7 +1427,7 @@ async function copyText(text) {
   }
 }
 
-document.addEventListener('click', (event) => {
+document.addEventListener('click', async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) {
     return;
@@ -1370,8 +1454,15 @@ document.addEventListener('click', (event) => {
   if (openButton) {
     const file = openButton.getAttribute('data-file') || '';
     const line = openButton.getAttribute('data-line') || '1';
-    const uri = toVsCodeUri(file, line);
-    window.location.href = uri;
+    const scheme = chooseIdeScheme();
+    if (!scheme) {
+      return;
+    }
+    const uri = toEditorUri(file, line, scheme);
+    const opened = window.open(uri, '_blank', 'noopener');
+    if (!opened) {
+      window.location.href = uri;
+    }
     return;
   }
 

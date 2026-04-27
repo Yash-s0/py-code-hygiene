@@ -4,6 +4,7 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+import re
 
 from pycodehygiene.cli import _reports_dir, main
 
@@ -87,6 +88,55 @@ class CliScanOutputFlagTests(unittest.TestCase):
             self.assertIn("Output reports skipped (--no-json and --no-html)", stdout.getvalue())
             self.assertNotIn("HTML report:", stdout.getvalue())
             self.assertNotIn("JSON report:", stdout.getvalue())
+
+    def test_scan_min_confidence_override_surfaces_low_confidence_dead_code(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "app").mkdir(parents=True, exist_ok=True)
+            (root / "app" / "registry.py").write_text(
+                textwrap.dedent(
+                    """
+                    def register():
+                        return 1
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (root / "main.py").write_text(
+                textwrap.dedent(
+                    """
+                    from app.registry import register as ticket_register
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            default_stdout = StringIO()
+            with redirect_stdout(default_stdout):
+                default_exit = main(["scan", str(root), "--no-html", "--no-json"])
+            self.assertEqual(default_exit, 0)
+            self.assertIn("dead_code_suppressed=1", default_stdout.getvalue())
+            default_match = re.search(r"dead_code=(\d+)", default_stdout.getvalue())
+            self.assertIsNotNone(default_match)
+            default_dead = int(default_match.group(1))
+
+            low_stdout = StringIO()
+            with redirect_stdout(low_stdout):
+                low_exit = main(
+                    [
+                        "scan",
+                        str(root),
+                        "--no-html",
+                        "--no-json",
+                        "--min-confidence",
+                        "low",
+                    ]
+                )
+            self.assertEqual(low_exit, 0)
+            low_match = re.search(r"dead_code=(\d+)", low_stdout.getvalue())
+            self.assertIsNotNone(low_match)
+            low_dead = int(low_match.group(1))
+            self.assertGreater(low_dead, default_dead)
 
 
 if __name__ == "__main__":

@@ -80,9 +80,11 @@ Explanation of each line:
    exclude glob filter (repeatable).
 7. `--min-dup-lines 8`
    minimum duplicate block size.
-8. `--dup-threshold 0.88`
+8. `--min-confidence low`
+   include low-confidence dead-code findings in output.
+9. `--dup-threshold 0.88`
    near-duplicate similarity threshold (`0.5` to `1.0`).
-9. `--complexity-threshold 12`
+10. `--complexity-threshold 12`
    complexity hotspot threshold.
 
 ### Scan Options
@@ -94,6 +96,7 @@ Explanation of each line:
 | `--config` | Path to `pycodehygiene.toml` |
 | `--include` | Include glob pattern (repeatable) |
 | `--exclude` | Exclude glob pattern (repeatable) |
+| `--min-confidence` | Minimum dead-code confidence (`low`, `medium`, `high`) |
 | `--min-dup-lines` | Override duplicate minimum lines |
 | `--dup-threshold` | Override duplicate similarity threshold |
 | `--complexity-threshold` | Override complexity threshold |
@@ -108,6 +111,7 @@ py-code-hygiene benchmark /path/to/project \
   --config /path/to/pycodehygiene.toml \
   --include "app/**/*.py" \
   --exclude "tests/**" \
+  --min-confidence low \
   --min-dup-lines 8 \
   --dup-threshold 0.88 \
   --complexity-threshold 12 \
@@ -129,11 +133,13 @@ Explanation of each line:
    exclude glob filter (repeatable).
 7. `--min-dup-lines 8`
    duplicate analyzer override.
-8. `--dup-threshold 0.88`
+8. `--min-confidence low`
+   include low-confidence dead-code findings.
+9. `--dup-threshold 0.88`
    similarity override.
-9. `--complexity-threshold 12`
+10. `--complexity-threshold 12`
    complexity override.
-10. `--json-output benchmark_results.json`
+11. `--json-output benchmark_results.json`
     write benchmark JSON artifact to `reports/`.
 
 ### Benchmark Options
@@ -143,6 +149,7 @@ Explanation of each line:
 | `--config` | Path to `pycodehygiene.toml` |
 | `--include` | Include glob pattern (repeatable) |
 | `--exclude` | Exclude glob pattern (repeatable) |
+| `--min-confidence` | Minimum dead-code confidence (`low`, `medium`, `high`) |
 | `--min-dup-lines` | Duplicate minimum lines override |
 | `--dup-threshold` | Duplicate similarity threshold override |
 | `--complexity-threshold` | Complexity threshold override |
@@ -183,6 +190,11 @@ py-code-hygiene scan /path/to/project --no-html
 Scan with HTML only:
 ```bash
 py-code-hygiene scan /path/to/project --no-json
+```
+
+Include low-confidence dead-code findings:
+```bash
+py-code-hygiene scan /path/to/project --min-confidence low
 ```
 
 Benchmark with defaults:

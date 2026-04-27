@@ -26,6 +26,12 @@ def build_parser() -> argparse.ArgumentParser:
     scan_parser.add_argument("--config", default=None, help="Path to pycodehygiene.toml")
     scan_parser.add_argument("--include", action="append", default=None, help="Include glob pattern (repeatable)")
     scan_parser.add_argument("--exclude", action="append", default=None, help="Exclude glob pattern (repeatable)")
+    scan_parser.add_argument(
+        "--min-confidence",
+        choices=["low", "medium", "high"],
+        default=None,
+        help="Minimum confidence level for dead-code findings",
+    )
     scan_parser.add_argument("--min-dup-lines", type=int, default=None, help="Minimum lines for duplicate analysis")
     scan_parser.add_argument("--dup-threshold", type=float, default=None, help="Near-duplicate similarity threshold (0.5-1.0)")
     scan_parser.add_argument("--complexity-threshold", type=int, default=None, help="Complexity hotspot threshold")
@@ -40,6 +46,12 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_parser.add_argument("--config", default=None, help="Path to pycodehygiene.toml")
     benchmark_parser.add_argument("--include", action="append", default=None, help="Include glob pattern (repeatable)")
     benchmark_parser.add_argument("--exclude", action="append", default=None, help="Exclude glob pattern (repeatable)")
+    benchmark_parser.add_argument(
+        "--min-confidence",
+        choices=["low", "medium", "high"],
+        default=None,
+        help="Minimum confidence level for dead-code findings",
+    )
     benchmark_parser.add_argument("--min-dup-lines", type=int, default=None, help="Minimum lines for duplicate analysis")
     benchmark_parser.add_argument("--dup-threshold", type=float, default=None, help="Near-duplicate similarity threshold (0.5-1.0)")
     benchmark_parser.add_argument("--complexity-threshold", type=int, default=None, help="Complexity hotspot threshold")
@@ -70,6 +82,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             config_path=Path(args.config).resolve() if args.config else None,
             include=include,
             exclude=exclude,
+            minimum_confidence_to_report=args.min_confidence,
             duplicate_min_lines=args.min_dup_lines,
             duplicate_similarity_threshold=args.dup_threshold,
             complexity_threshold=args.complexity_threshold,
@@ -96,6 +109,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         config_path=Path(args.config).resolve() if args.config else None,
         include=include,
         exclude=exclude,
+        minimum_confidence_to_report=args.min_confidence,
         duplicate_min_lines=args.min_dup_lines,
         duplicate_similarity_threshold=args.dup_threshold,
         complexity_threshold=args.complexity_threshold,
@@ -113,6 +127,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     summary = report.get("summary", {})
     analyzer_counts = summary.get("by_analyzer", {}) if isinstance(summary, dict) else {}
+    dead_summary = report.get("dead_code", {}).get("summary", {}) if isinstance(report.get("dead_code"), dict) else {}
+    dead_suppressed = dead_summary.get("suppressed", 0) if isinstance(dead_summary, dict) else 0
     print(f"[+] Target: {target}")
     print(f"[+] Files analyzed: {summary.get('files_analyzed', 0)}")
     print(f"[+] Findings: {summary.get('total_findings', 0)}")
@@ -123,6 +139,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             comp=analyzer_counts.get("complexity", 0),
         )
     )
+    print(f"    dead_code_suppressed={dead_suppressed} (use --min-confidence low to include low-confidence findings)")
     if json_path is not None:
         print(f"[+] JSON report: {json_path}")
     if html_path is not None:

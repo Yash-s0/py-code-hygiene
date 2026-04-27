@@ -260,6 +260,7 @@ def apply_cli_overrides(
     *,
     include: Optional[List[str]] = None,
     exclude: Optional[List[str]] = None,
+    minimum_confidence_to_report: Optional[str] = None,
     duplicate_min_lines: Optional[int] = None,
     duplicate_similarity_threshold: Optional[float] = None,
     complexity_threshold: Optional[int] = None,
@@ -268,6 +269,8 @@ def apply_cli_overrides(
         config.include = include
     if exclude is not None:
         config.exclude = exclude
+    if minimum_confidence_to_report is not None:
+        config.minimum_confidence_to_report = str(minimum_confidence_to_report).lower()
 
     if duplicate_min_lines is not None:
         config.duplicate_min_lines = duplicate_min_lines
