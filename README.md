@@ -1,11 +1,19 @@
 # py-code-hygiene
 
-A Python CLI tool that scans a codebase for:
-- likely dead code
+A Python analysis tool for Python developers and teams to reduce tech debt by surfacing likely dead code, duplicated logic, and complexity hotspots in one report-driven workflow.
 - duplicate logic (exact and near-duplicate)
 - complexity hotspots
 
 It generates reports so you can quickly identify cleanup and refactor opportunities.
+
+Unlike basic linters that focus on style and syntax rules, py-code-hygiene is focused on structural maintainability risks and refactor opportunities across a codebase.
+
+## Why use this
+
+- Reduce tech debt with targeted, evidence-based cleanup opportunities.
+- Find likely unused code before it silently accumulates.
+- Detect exact and near-duplicate logic that increases maintenance overhead.
+- Highlight complexity risks early so refactors can be prioritized.
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![Jinja2](https://img.shields.io/badge/Jinja2-Template%20Engine-B41717?logo=jinja&logoColor=white)
@@ -32,6 +40,14 @@ What this does:
 - scans the target project
 - writes reports to this repo's `reports/` folder
 - prints a summary in the terminal
+- Then open the generated HTML report in your browser.
+
+## How it works
+
+- Use the CLI only to run analysis.
+- Open the generated HTML report in a browser for the full review experience.
+- Use JSON output for integrations, automation, or downstream processing.
+- No CLI is needed to view the generated results.
 
 ## Install
 
@@ -138,6 +154,11 @@ py-code-hygiene benchmark /path/to/project \
 ## Report Output Behavior
 Scan report files are always written under this repo's `reports/` directory.
 
+Usage flow:
+- Open the generated HTML report in your browser.
+- Use the JSON report for integrations and automation.
+- Use the CLI only to execute analysis and generate outputs.
+
 Rules:
 - only the filename portion of output paths is used
 - default filenames are:
@@ -205,7 +226,7 @@ python -m compileall pycodehygiene
 python -m pytest
 ```
 
-## Screenshot / Sample Report
+## Sample Output
 
 Placeholder: add a screenshot of the generated HTML report and/or a short JSON snippet example here.
 
