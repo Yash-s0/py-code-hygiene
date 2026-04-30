@@ -18,8 +18,9 @@ It generates reports so you can quickly identify cleanup and refactor opportunit
 - Python 3.11+
 
 ## Quick Start (Recommended)
+
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Yash-s0/py-code-hygiene.git
 cd py-code-hygiene
 python -m venv .venv
 source .venv/bin/activate
@@ -33,6 +34,7 @@ What this does:
 - prints a summary in the terminal
 
 ## Install
+
 If you already cloned the repo:
 
 ```bash
@@ -43,6 +45,7 @@ pip install -e .
 ```
 
 ## Main Commands
+
 ```bash
 py-code-hygiene --help
 py-code-hygiene scan --help
@@ -54,6 +57,7 @@ Subcommands:
 - `benchmark`: measure analyzer/full-scan performance
 
 ## Scan Command
+
 Basic usage:
 
 ```bash
@@ -61,7 +65,7 @@ py-code-hygiene scan /path/to/project
 py-code-hygiene scan .
 ```
 
-Useful full example:
+Full example:
 
 ```bash
 py-code-hygiene scan /path/to/project \
@@ -93,6 +97,7 @@ py-code-hygiene scan /path/to/project \
 | `--no-json` | Skip JSON generation |
 
 ## Benchmark Command
+
 Basic usage:
 
 ```bash
@@ -136,9 +141,10 @@ Scan report files are always written under this repo's `reports/` directory.
 Rules:
 - only the filename portion of output paths is used
 - default filenames are:
-  - `<target-folder>_report.html`
-  - `<target-folder>_report.json`
+  - `<target-name>_report.html`
+  - `<target-name>_report.json`
 - missing file extension is added automatically
+- when the default `pycodehygiene_report.*` name is used, it is replaced with `<target-name>_report.*`
 - use `--no-html` and/or `--no-json` to control outputs
 
 Examples:
@@ -192,7 +198,25 @@ If a `.env` file exists in this tool repo, scan checks:
 With a supported key, findings may include AI improvement guidance.
 Without a key, scanning still works normally.
 
+## Development / Local Checks
+
+```bash
+python -m compileall pycodehygiene
+python -m pytest
+```
+
+## Screenshot / Sample Report
+
+Placeholder: add a screenshot of the generated HTML report and/or a short JSON snippet example here.
+
+## Limitations
+
+- Static analysis is conservative and may miss runtime-only behavior.
+- Dynamic imports/reflection patterns can reduce detection precision.
+- Findings are guidance-oriented and should be validated before code deletion.
+
 ## Common Recipes
+
 Scan current folder:
 ```bash
 py-code-hygiene scan .
@@ -219,8 +243,8 @@ py-code-hygiene benchmark /path/to/project
 ```
 
 ## Notes
+
 - This tool is review-focused and does not auto-modify your code.
-- Static analysis is conservative and may miss runtime-only behavior.
 
 ## License
 MIT
