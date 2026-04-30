@@ -1,6 +1,6 @@
 # py-code-hygiene
 
-A Python analysis tool for Python developers and teams to reduce tech debt through a report-driven workflow.
+A developer-focused CLI that helps Python teams reduce tech debt through a report-driven workflow.
 
 It analyzes codebases for:
 - likely dead code
@@ -43,7 +43,7 @@ What this does:
 - scans the target project
 - writes reports to this repo's `reports/` folder
 - shows analysis results and findings directly in the terminal
-- Then open the generated HTML report in your browser.
+- then open the generated HTML report in your browser
 
 Example terminal output:
 ```text
