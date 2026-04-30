@@ -1,11 +1,11 @@
 # py-code-hygiene
 
-Unified Python code hygiene scanner for:
-- dead code
-- duplicates
+A Python CLI tool that scans a codebase for:
+- likely dead code
+- duplicate logic (exact and near-duplicate)
 - complexity hotspots
 
-By default it produces one developer-friendly HTML report and one JSON report per scan.
+It generates reports so you can quickly identify cleanup and refactor opportunities.
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![Jinja2](https://img.shields.io/badge/Jinja2-Template%20Engine-B41717?logo=jinja&logoColor=white)
@@ -14,16 +14,27 @@ By default it produces one developer-friendly HTML report and one JSON report pe
 ![JSON](https://img.shields.io/badge/Report-JSON-000000?logo=json&logoColor=white)
 ![CLI](https://img.shields.io/badge/Interface-CLI-2d2d2d?logo=gnubash&logoColor=white)
 
-## Why developers use it
-- catches likely removable code with confidence scoring
-- finds exact and near duplicates
-- highlights complex functions to refactor first
-- keeps outputs centralized in this repo's `reports/` folder
-
 ## Requirements
 - Python 3.11+
 
+## Quick Start (Recommended)
+```bash
+git clone <your-repo-url>
+cd py-code-hygiene
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+py-code-hygiene scan .
+```
+
+What this does:
+- scans the target project
+- writes reports to this repo's `reports/` folder
+- prints a summary in the terminal
+
 ## Install
+If you already cloned the repo:
+
 ```bash
 cd py-code-hygiene
 python -m venv .venv
@@ -31,28 +42,7 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-## Quick Start
-```bash
-py-code-hygiene scan /path/to/project
-```
-
-What happens:
-- analyzes the target project
-- writes reports in `reports/`
-- prints summary stats in terminal
-
-### Optional AI Guidance
-If this tool repository contains a `.env` file, scanner auto-checks:
-- `OPENAI_API_KEY` (preferred)
-- `ANTHROPIC_API_KEY` (fallback)
-
-When a key is found, findings get AI guidance:
-- what is wrong
-- how to improve
-
-If no key is present, scan continues normally and prints a "working without AI" note in terminal and report UI.
-
-## Command Help
+## Main Commands
 ```bash
 py-code-hygiene --help
 py-code-hygiene scan --help
@@ -60,10 +50,19 @@ py-code-hygiene benchmark --help
 ```
 
 Subcommands:
-- `scan`: run analysis and generate reports
+- `scan`: analyze a project and generate reports
 - `benchmark`: measure analyzer/full-scan performance
 
-## Scan Command (Line-by-Line)
+## Scan Command
+Basic usage:
+
+```bash
+py-code-hygiene scan /path/to/project
+py-code-hygiene scan .
+```
+
+Useful full example:
+
 ```bash
 py-code-hygiene scan /path/to/project \
   --html-output project_report.html \
@@ -71,50 +70,37 @@ py-code-hygiene scan /path/to/project \
   --config /path/to/pycodehygiene.toml \
   --include "app/**/*.py" \
   --exclude "tests/**" \
+  --min-confidence low \
   --min-dup-lines 8 \
   --dup-threshold 0.88 \
   --complexity-threshold 12
 ```
 
-Explanation of each line:
-1. `py-code-hygiene scan /path/to/project`
-   runs scan on this folder (defaults to `.` if path is not provided).
-2. `--html-output project_report.html`
-   sets HTML report filename (`-o` is a shortcut).
-3. `--json-output project_report.json`
-   sets JSON report filename.
-4. `--config /path/to/pycodehygiene.toml`
-   uses explicit config file.
-5. `--include "app/**/*.py"`
-   include glob filter (repeatable).
-6. `--exclude "tests/**"`
-   exclude glob filter (repeatable).
-7. `--min-dup-lines 8`
-   minimum duplicate block size.
-8. `--min-confidence low`
-   include low-confidence dead-code findings in output.
-9. `--dup-threshold 0.88`
-   near-duplicate similarity threshold (`0.5` to `1.0`).
-10. `--complexity-threshold 12`
-   complexity hotspot threshold.
-
 ### Scan Options
-| Option | Meaning |
+| Option | Description |
 |---|---|
 | `path` | Project path to scan (default: current directory) |
-| `--html-output`, `-o` | HTML output filename |
-| `--json-output` | JSON output filename |
+| `--html-output`, `-o` | HTML report filename |
+| `--json-output` | JSON report filename |
 | `--config` | Path to `pycodehygiene.toml` |
 | `--include` | Include glob pattern (repeatable) |
 | `--exclude` | Exclude glob pattern (repeatable) |
-| `--min-confidence` | Minimum dead-code confidence (`low`, `medium`, `high`) |
-| `--min-dup-lines` | Override duplicate minimum lines |
-| `--dup-threshold` | Override duplicate similarity threshold |
-| `--complexity-threshold` | Override complexity threshold |
+| `--min-confidence` | Dead-code confidence floor: `low`, `medium`, `high` |
+| `--min-dup-lines` | Minimum lines for duplicate detection |
+| `--dup-threshold` | Near-duplicate similarity threshold (`0.5` to `1.0`) |
+| `--complexity-threshold` | Complexity hotspot threshold |
 | `--no-html` | Skip HTML generation |
 | `--no-json` | Skip JSON generation |
 
-## Benchmark Command (Line-by-Line)
+## Benchmark Command
+Basic usage:
+
+```bash
+py-code-hygiene benchmark /path/to/project
+```
+
+Example:
+
 ```bash
 py-code-hygiene benchmark /path/to/project \
   --runs 8 \
@@ -129,97 +115,50 @@ py-code-hygiene benchmark /path/to/project \
   --json-output benchmark_results.json
 ```
 
-Explanation of each line:
-1. `py-code-hygiene benchmark /path/to/project`
-   runs benchmark for analyzers + full scan.
-2. `--runs 8`
-   measured runs after warmup.
-3. `--warmups 2`
-   warmup runs before measurements.
-4. `--config /path/to/pycodehygiene.toml`
-   benchmark with specific config.
-5. `--include "app/**/*.py"`
-   include glob filter (repeatable).
-6. `--exclude "tests/**"`
-   exclude glob filter (repeatable).
-7. `--min-dup-lines 8`
-   duplicate analyzer override.
-8. `--min-confidence low`
-   include low-confidence dead-code findings.
-9. `--dup-threshold 0.88`
-   similarity override.
-10. `--complexity-threshold 12`
-   complexity override.
-11. `--json-output benchmark_results.json`
-    write benchmark JSON artifact to `reports/`.
-
 ### Benchmark Options
-| Option | Meaning |
+| Option | Description |
 |---|---|
 | `path` | Project path to benchmark (default: current directory) |
 | `--config` | Path to `pycodehygiene.toml` |
 | `--include` | Include glob pattern (repeatable) |
 | `--exclude` | Exclude glob pattern (repeatable) |
-| `--min-confidence` | Minimum dead-code confidence (`low`, `medium`, `high`) |
+| `--min-confidence` | Dead-code confidence floor: `low`, `medium`, `high` |
 | `--min-dup-lines` | Duplicate minimum lines override |
 | `--dup-threshold` | Duplicate similarity threshold override |
 | `--complexity-threshold` | Complexity threshold override |
 | `--runs` | Measured runs (default: `5`) |
 | `--warmups` | Warmup runs (default: `1`) |
-| `--json-output` | Benchmark JSON filename (saved in `reports/`) |
+| `--json-output` | Benchmark JSON filename |
 
-## Report Output Rules
-- scan outputs are always written under this repo's `reports/` directory
-- only the filename part of output paths is used
-- default scan filenames are:
+## Report Output Behavior
+Scan report files are always written under this repo's `reports/` directory.
+
+Rules:
+- only the filename portion of output paths is used
+- default filenames are:
   - `<target-folder>_report.html`
   - `<target-folder>_report.json`
-- if extension is omitted, it is added automatically
-- use `--no-html` and/or `--no-json` to control which report files are generated
+- missing file extension is added automatically
+- use `--no-html` and/or `--no-json` to control outputs
 
 Examples:
 - `py-code-hygiene scan /path/to/project --html-output my.html --json-output my.json`
-  creates `reports/my.html` and `reports/my.json`.
+  - creates `reports/my.html` and `reports/my.json`
 - `py-code-hygiene scan /path/to/project --no-html`
-  creates only `reports/<target>_report.json`.
+  - creates only JSON
 - `py-code-hygiene scan /path/to/project --no-json`
-  creates only `reports/<target>_report.html`.
+  - creates only HTML
 - `py-code-hygiene scan /path/to/project --no-html --no-json`
-  creates no report files (terminal summary only).
+  - creates no report files (terminal summary only)
 
-## Common Recipes
-Scan current folder:
-```bash
-py-code-hygiene scan .
-```
-
-Scan with JSON only:
-```bash
-py-code-hygiene scan /path/to/project --no-html
-```
-
-Scan with HTML only:
-```bash
-py-code-hygiene scan /path/to/project --no-json
-```
-
-Include low-confidence dead-code findings:
-```bash
-py-code-hygiene scan /path/to/project --min-confidence low
-```
-
-Benchmark with defaults:
-```bash
-py-code-hygiene benchmark /path/to/project
-```
-
-## Config
-Config file locations:
+## Configuration
+Config file discovery:
 - auto-detected: `pycodehygiene.toml` in scan root
 - explicit: `--config /path/to/pycodehygiene.toml`
-- reference schema: `pycodehygiene.toml.example`
+- reference: `pycodehygiene.toml.example`
 
-Example config:
+Example:
+
 ```toml
 [tool.pycodehygiene]
 minimum_confidence_to_report = "medium"
@@ -245,15 +184,42 @@ complexity_threshold = 25
 top_complexity_limit = 30
 ```
 
-## What the Report Includes
-- overview metrics and parse errors
-- dead-code findings with confidence + evidence
-- duplicate groups with snippets + similarity
-- complexity hotspots + top functions
-- HTML filtering, sorting, and issue preview interactions
+## Optional AI Guidance
+If a `.env` file exists in this tool repo, scan checks:
+- `OPENAI_API_KEY` (preferred)
+- `ANTHROPIC_API_KEY` (fallback)
+
+With a supported key, findings may include AI improvement guidance.
+Without a key, scanning still works normally.
+
+## Common Recipes
+Scan current folder:
+```bash
+py-code-hygiene scan .
+```
+
+Scan JSON only:
+```bash
+py-code-hygiene scan /path/to/project --no-html
+```
+
+Scan HTML only:
+```bash
+py-code-hygiene scan /path/to/project --no-json
+```
+
+Include low-confidence dead-code findings:
+```bash
+py-code-hygiene scan /path/to/project --min-confidence low
+```
+
+Run benchmark with defaults:
+```bash
+py-code-hygiene benchmark /path/to/project
+```
 
 ## Notes
-- Review-only by design (no autofix mutation in report).
+- This tool is review-focused and does not auto-modify your code.
 - Static analysis is conservative and may miss runtime-only behavior.
 
 ## License
