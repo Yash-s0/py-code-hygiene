@@ -1,6 +1,9 @@
 # py-code-hygiene
 
-A Python analysis tool for Python developers and teams to reduce tech debt by surfacing likely dead code, duplicated logic, and complexity hotspots in one report-driven workflow.
+A Python analysis tool for Python developers and teams to reduce tech debt through a report-driven workflow.
+
+It analyzes codebases for:
+- likely dead code
 - duplicate logic (exact and near-duplicate)
 - complexity hotspots
 
@@ -39,8 +42,16 @@ py-code-hygiene scan .
 What this does:
 - scans the target project
 - writes reports to this repo's `reports/` folder
-- prints a summary in the terminal
+- shows analysis results and findings directly in the terminal
 - Then open the generated HTML report in your browser.
+
+Example terminal output:
+```text
+[+] Target: /path/to/project
+[+] Files analyzed: 128 Python files
+[+] Findings: dead_code=8 duplicates=0 complexity=0
+[+] HTML report: /path/to/repo/reports/project_report.html
+```
 
 ## How it works
 
