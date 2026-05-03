@@ -25,10 +25,6 @@ Unlike basic linters that focus on style and syntax rules, py-code-hygiene is fo
 ![JSON](https://img.shields.io/badge/Report-JSON-000000?logo=json&logoColor=white)
 ![CLI](https://img.shields.io/badge/Interface-CLI-2d2d2d?logo=gnubash&logoColor=white)
 
-## Support
-
-<a href="https://chai4.me/yashjangra" target="_blank" title="Support yashjangra on Chai4Me" style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;background:#ffffff;padding:8px 32px;border-radius:16px;text-decoration:none;border:1px solid #e5e7eb;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);transition:transform 0.2s;"><img src="https://chai4.me/icons/wordmark.png" alt="Chai4Me" style="height:32px;object-fit:contain;"/></a>
-
 ## Requirements
 - Python 3.11+
 
@@ -281,6 +277,10 @@ py-code-hygiene benchmark /path/to/project
 ## Notes
 
 - This tool is review-focused and does not auto-modify your code.
+
+## Support
+
+[![Support on Chai4Me](https://img.shields.io/badge/Support%20on-Chai4Me-FF8A00?style=for-the-badge)](https://chai4.me/yashjangra)
 
 ## License
 MIT
