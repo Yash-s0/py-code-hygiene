@@ -60,7 +60,7 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_parser.add_argument(
         "--json-output",
         default=None,
-        help="Optional path to write benchmark JSON report",
+        help="Optional benchmark JSON filename (written under reports/)",
     )
 
     return parser
