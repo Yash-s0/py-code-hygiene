@@ -239,7 +239,45 @@ python -m pytest
 
 ## Sample Output
 
-Placeholder: add a screenshot of the generated HTML report and/or a short JSON snippet example here.
+HTML report previews:
+
+![High score report preview](images/high_score.jpg)
+![Low score report preview](images/low_score.jpg)
+
+Example JSON snippet:
+
+```json
+{
+  "meta": {
+    "tool": "py-code-hygiene",
+    "version": "0.1.0",
+    "target": "/path/to/project"
+  },
+  "summary": {
+    "files_analyzed": 128,
+    "total_findings": 11,
+    "health_score": 86,
+    "by_analyzer": {
+      "dead_code": 8,
+      "duplicates": 2,
+      "complexity": 1
+    }
+  },
+  "findings": [
+    {
+      "analyzer": "dead_code",
+      "category": "unused-private-function",
+      "confidence": "high",
+      "file": "/path/to/project/app/utils.py",
+      "line_start": 42,
+      "symbol": "_legacy_helper",
+      "message": "Unused symbol"
+    }
+  ]
+}
+```
+
+Tip: run `py-code-hygiene scan /path/to/project` and use the generated HTML report in `reports/` for the full interactive view.
 
 ## Limitations
 
