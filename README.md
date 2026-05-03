@@ -11,6 +11,8 @@ It generates reports so you can quickly identify cleanup and refactor opportunit
 
 Unlike basic linters that focus on style and syntax rules, py-code-hygiene is focused on structural maintainability risks and refactor opportunities across a codebase.
 
+Known limitation: this is static analysis, so dynamic imports/reflection/framework magic can occasionally produce false positives or misses.
+
 ## Why use this
 
 - Reduce tech debt with targeted, evidence-based cleanup opportunities.
