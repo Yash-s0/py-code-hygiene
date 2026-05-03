@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from pycodehygiene import __version__
 from pycodehygiene.ai_enrichment import enrich_findings
 from pycodehygiene.analyzer import analyze_dead_code
 from pycodehygiene.complexity import analyze_complexity
@@ -87,7 +88,7 @@ def scan_project(
     return {
         "meta": {
             "tool": "py-code-hygiene",
-            "version": "0.1.0",
+            "version": __version__,
             "generated_at": datetime.now(timezone.utc).astimezone().strftime("%b %d, %Y %H:%M %Z"),
             "target": str(discovery.root),
             "python": platform.python_version(),
